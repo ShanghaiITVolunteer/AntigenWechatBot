@@ -43,13 +43,21 @@ async def on_message(msg: Message):
     if talker.contact_id in administrators:
         if msg.type() == MessageType.MESSAGE_TYPE_TEXT:
             verify_codes.append(msg.text())
+            with open('verify_codes.json', 'w', encoding='utf-8') as f:
+                json.dump(verify_codes, f)
+            print("verify code has been saved as verify_codes.json")
         return
 
     #判断是否在users列表里面，如果在的话，把user的信息以"乱序"转发到users所属的群里
     if talker.contact_id in users:
+        if not user_send_quns[talker.contact_id]:
+            await msg.say(pre_words['no_qun'])
+            return
+
         if msg.type() in [MessageType.MESSAGE_TYPE_IMAGE, MessageType.MESSAGE_TYPE_VIDEO,
                           MessageType.MESSAGE_TYPE_ATTACHMENT]:
             file_box_buffer = await msg.to_file_box()
+
             random.shuffle(user_send_quns[talker.contact_id])
             for room in user_send_quns[talker.contact_id]:
                 try:
@@ -59,6 +67,7 @@ async def on_message(msg: Message):
 
         if msg.type() == MessageType.MESSAGE_TYPE_MINI_PROGRAM:
             minipro = await msg.to_mini_program()
+
             random.shuffle(user_send_quns[talker.contact_id])
             for room in user_send_quns[talker.contact_id]:
                 try:
@@ -103,28 +112,30 @@ async def on_room_invite(room_invitation: RoomInvitation):
     try:
         room_name = await room_invitation.topic()
         inviter = await room_invitation.inviter()
-        if inviter.contact_id in users:
-            await room_invitation.accept()
-            print(f"收到来自{inviter.name}的群聊:{room_name} 邀请,已经自动接受")
-            rooms = await xiaoyan.Room.find_all(room_name)
-            if rooms:
-                for room in rooms:
-                    if room.room_id not in user_send_quns[inviter.contact_id]:
-                        user_send_quns[inviter.contact_id].append(room.room_id)
-                        await room.say(pre_words["hello_qun"])
-            else:
-                await inviter.say(pre_words['failed_add_qun'])
+        await room_invitation.accept()
+        print(f"收到来自{inviter.name}的群聊:{room_name} 邀请,已经自动接受")
+        rooms = await xiaoyan.Room.find_all(room_name)
+        if rooms:
+            for room in rooms:
+                if room.room_id not in user_send_quns[inviter.contact_id]:
+                    user_send_quns[inviter.contact_id].append(room.room_id)
+                    await room.say(pre_words["hello_qun"])
+            with open('user_send_quns.json', 'w', encoding='utf-8') as f:
+                json.dump(user_send_quns, f)
+            print("user send quns has been saved as user_send_quns.json")
         else:
-            await inviter.say(pre_words['not_user'])
+            await inviter.say(pre_words['failed_add_qun'])
     except Exception as e:
         print(e)
-
 
 async def on_room_join(room: Room, invitees: [Contact], inviter: Contact, date):
     """
     有人新入群后的操作
     主要是欢迎并提醒ta把群昵称换为楼栋-门牌号
     """
+    if xiaoyan.user_self() in invitees:
+        return
+
     mentionlist = [contact.contact_id for contact in invitees]
     await room.say(pre_words["welcome"], mentionlist)
     path = os.getcwd() + '\media\welcome.jpeg'
@@ -132,8 +143,6 @@ async def on_room_join(room: Room, invitees: [Contact], inviter: Contact, date):
     await room.say(filebox)
     # 检查群成员是否已经将群昵称设为"楼号-门牌号"，如未则提醒，如有则按此更新微信备注（取代昵称）
     for contact in invitees:
-        if contact == xiaoyan.user_self():
-            continue
         alias = await room.alias(contact)
         if alias:
             if alias != await contact.alias():
@@ -160,6 +169,15 @@ async def on_friendship(friendship: Friendship):
         if text in verify_codes:
             await friendship.accept()
             verify_codes.remove(text)
+            with open('verify_codes.json', 'w', encoding='utf-8') as f:
+                json.dump(verify_codes, f)
+            print("verify code has been saved as verify_codes.json")
+
+            users.append(contact.contact_id)
+            with open('users.json', 'w', encoding='utf-8') as f:
+                json.dump(users, f)
+            print("users has been saved as users.json")
+            await contact.say(pre_words['introduce'])
         else:
             await contact.say(pre_words['wrong_verify_code'])
 
