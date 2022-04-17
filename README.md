@@ -41,6 +41,12 @@ graph LR
   微信机器人 == 传达信息 ==> 楼栋C
 ```
 
+# Phase1.5:
+Integrated ASR function.
+This is mainly for special users, such as elderly users, who can generally only send voice (still in Shanghainese)
+
+增加ASR功能用于服务特殊用户，诸如老人或只能发送语音信息的人（上海话）
+
 ### Phase 2:
 Add very simple question-answer bot. In this phase, we do not want NLP technology include, but set some special keyword, like daily-report, so that the user can type the keyword in the chat box and the bot will automatically reply with the answer.
 
