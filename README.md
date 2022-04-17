@@ -41,7 +41,7 @@ graph LR
   微信机器人 == 传达信息 ==> 楼栋C
 ```
 
-# Phase1.5:
+### Phase1.5:
 Integrated ASR function.
 This is mainly for special users, such as elderly users, who can generally only send voice (still in Shanghainese)
 
