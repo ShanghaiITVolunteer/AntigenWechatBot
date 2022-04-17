@@ -17,17 +17,17 @@ from wechaty import (
 )
 
 administrators = ['wxid_a6xxa7n11u5j22']  #管理员名单，项目运营团队
-with open('verify_codes.json') as f:
+with open('verify_codes.json', encoding='utf-8') as f:
     verify_codes = json.load(f)
     print(verify_codes)
     print("verify_codes loaded successful")
 
-with open('users.json') as f:
+with open('users.json', encoding='utf-8') as f:
     users = json.load(f)
     print(users)
     print("users loaded successful")
 
-with open('user_send_quns.json') as f:
+with open('user_send_quns.json', encoding='utf-8') as f:
     user_send_quns = json.load(f)
     print(user_send_quns)
     print("user send quns loaded successful")
@@ -44,7 +44,7 @@ async def on_message(msg: Message):
     Message Handler for the Bot
     """
 
-    if msg.is_self() or msg.type() in [MessageType.MESSAGE_TYPE_UNSPECIFIED,MessageType.MESSAGE_TYPE_RECALLED]:
+    if msg.is_self() or msg.type() in [MessageType.MESSAGE_TYPE_UNSPECIFIED, MessageType.MESSAGE_TYPE_RECALLED]:
         return
 
     talker = msg.talker()
@@ -64,7 +64,7 @@ async def on_message(msg: Message):
         if len(user_send_quns[talker.contact_id]) == 0:
             await msg.say(pre_words['no_qun'])
             return
-
+        """
         if msg.type() in [MessageType.MESSAGE_TYPE_IMAGE, MessageType.MESSAGE_TYPE_VIDEO,
                           MessageType.MESSAGE_TYPE_ATTACHMENT]:
             file_box_buffer = await msg.to_file_box()
@@ -75,7 +75,7 @@ async def on_message(msg: Message):
                 if room:
                     await room.say(file_box_buffer)
             return
-
+        """
         if msg.type() == MessageType.MESSAGE_TYPE_MINI_PROGRAM:
             minipro = await msg.to_mini_program()
 
