@@ -39,12 +39,13 @@ async def on_message(msg: Message):
     talker = msg.talker()
     #room = msg.room()
 
-    #管理员对话发验证码（一次有效）
+    #管理员以文本形式向bot发验证码（一次有效），用户只有凭验证码才能成功添加bot好友，且验证码仅一次有效
     if talker.contact_id in administrators:
         if msg.type() == MessageType.MESSAGE_TYPE_TEXT:
             verify_codes.append(msg.text())
         return
 
+    #判断是否在users列表里面，如果在的话，把user的信息以"乱序"转发到users所属的群里
     if talker.contact_id in users:
         if msg.type() in [MessageType.MESSAGE_TYPE_IMAGE, MessageType.MESSAGE_TYPE_VIDEO,
                           MessageType.MESSAGE_TYPE_ATTACHMENT]:
@@ -94,6 +95,11 @@ async def on_login(user: Contact):
 
 
 async def on_room_invite(room_invitation: RoomInvitation):
+    """
+    收到入群邀请的处理
+    判断user是否在列表里，在的话，自动接受入群邀请，同时把这个群关联到user
+    否则的话告知user联系管理员
+    """
     try:
         room_name = await room_invitation.topic()
         inviter = await room_invitation.inviter()
@@ -115,6 +121,10 @@ async def on_room_invite(room_invitation: RoomInvitation):
 
 
 async def on_room_join(room: Room, invitees: [Contact], inviter: Contact, date):
+    """
+    有人新入群后的操作
+    主要是欢迎并提醒ta把群昵称换为楼栋-门牌号
+    """
     mentionlist = [contact.contact_id for contact in invitees]
     await room.say(pre_words["welcome"], mentionlist)
     path = os.getcwd() + '\media\welcome.jpeg'
@@ -137,6 +147,10 @@ async def on_room_join(room: Room, invitees: [Contact], inviter: Contact, date):
 
 
 async def on_friendship(friendship: Friendship):
+    """
+    收到好友邀请的处理
+    判断验证信息是否为管理员发放的有效code，有的话接受邀请并失效该code
+    """
     print(f'receive friendship<{friendship}> event')
 
     if friendship.type() == FriendshipType.FRIENDSHIP_TYPE_RECEIVE:
@@ -151,6 +165,10 @@ async def on_friendship(friendship: Friendship):
 
 
 async def on_room_topic(room: Room, new_topic: str, old_topic: str, changer: Contact, date):
+    """
+    群名称被更改后的操作
+    如果不是群主改的群名，机器人自动修改回原群名并提醒用户不当操作
+    """
     print(f'receive room topic changed event <from<{new_topic}> to <{old_topic}>> from room<{room}> ')
     if changer == xiaoyan.user_self():
         return
