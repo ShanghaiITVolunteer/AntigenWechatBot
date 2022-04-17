@@ -108,6 +108,8 @@ async def on_room_invite(room_invitation: RoomInvitation):
                         await room.say(pre_words["hello_qun"])
             else:
                 await inviter.say(pre_words['failed_add_qun'])
+        else:
+            await inviter.say(pre_words['not_user'])
     except Exception as e:
         print(e)
 
@@ -120,6 +122,8 @@ async def on_room_join(room: Room, invitees: [Contact], inviter: Contact, date):
     await room.say(filebox)
     # 检查群成员是否已经将群昵称设为"楼号-门牌号"，如未则提醒，如有则按此更新微信备注（取代昵称）
     for contact in invitees:
+        if contact == xiaoyan.user_self():
+            continue
         alias = await room.alias(contact)
         if alias:
             if alias != await contact.alias():
