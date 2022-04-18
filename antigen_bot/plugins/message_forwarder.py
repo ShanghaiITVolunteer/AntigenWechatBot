@@ -21,7 +21,6 @@ from wechaty import (
 
 class MessageForwarderPlugin(WechatyPlugin):
     """
-    
     功能点：
         1. 当被邀请入群，则立马同意，同时保存其相关信息。
         2. 如果是私聊的消息，则直接转发给该用户邀请机器人进入的所有群聊当中
@@ -74,7 +73,7 @@ class MessageForwarderPlugin(WechatyPlugin):
 
     async def on_room_topic(self, room: Room, new_topic: str, old_topic: str, changer: Contact, date: datetime) -> None:
         return await super().on_room_topic(room, new_topic, old_topic, changer, date)
-    
+
     async def on_room_invite(self, room_invitation: RoomInvitation) -> None:
         """理论上，只要是添加上好友的人，就可以进行直接被拉入各种群，因为已经做了身份验证
 
@@ -91,12 +90,12 @@ class MessageForwarderPlugin(WechatyPlugin):
 
             # sleep to sync the room info
             await asyncio.sleep(60)
-            
+
             topic = await room_invitation.topic()
             room = await self.bot.Room.find(topic)
             if room:
                 self._add_user_room(inviter, topic)
-        
+
     async def on_room_join(self, room: Room, invitees: List[Contact], inviter: Contact, date: datetime) -> None:
         bot_self = self.bot.user_self()
         is_self_invited_to_room = any([contact.contact_id == bot_self.contact_id for contact in invitees])
