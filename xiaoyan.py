@@ -50,6 +50,9 @@ async def on_message(msg: Message):
     talker = msg.talker()
     #room = msg.room()
 
+    if msg.room():
+        return
+
     #管理员以文本形式向bot发验证码（一次有效），用户只有凭验证码才能成功添加bot好友，且验证码仅一次有效
     if talker.contact_id in administrators:
         if msg.type() == MessageType.MESSAGE_TYPE_TEXT:
