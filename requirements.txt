@@ -1,3 +1,5 @@
 wechaty
+wechaty-puppet
+wechaty-puppet-service
 pandas
 openpyxl

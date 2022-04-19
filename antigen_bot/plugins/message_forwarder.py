@@ -61,8 +61,12 @@ class MessageForwarderPlugin(WechatyPlugin):
         # 2. 判断是否是自己发送的消息
         if talker.contact_id == self.bot.user_self().contact_id:
             return
+
+        # 3. 检查消息发送者是否是居委会成员
+        if talker.contact_id not in self.user2rooms:
+            return
         
-        # 3. 检查该用户是否有邀请入群
+        # 4. 检查该用户是否有邀请入群
         room_topics: List[str] = self.user2rooms.get(talker.contact_id, [])
         for room_topic in room_topics:
             room = await self.bot.Room.find(room_topic)
