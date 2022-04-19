@@ -75,34 +75,34 @@ class MessageForwarderPlugin(WechatyPlugin):
 
             await msg.forward(room)
 
-    async def on_room_topic(self, room: Room, new_topic: str, old_topic: str, changer: Contact, date: datetime) -> None:
-        return await super().on_room_topic(room, new_topic, old_topic, changer, date)
+    # async def on_room_topic(self, room: Room, new_topic: str, old_topic: str, changer: Contact, date: datetime) -> None:
+    #     return await super().on_room_topic(room, new_topic, old_topic, changer, date)
 
-    async def on_room_invite(self, room_invitation: RoomInvitation) -> None:
-        """理论上，只要是添加上好友的人，就可以进行直接被拉入各种群，因为已经做了身份验证
+    # async def on_room_invite(self, room_invitation: RoomInvitation) -> None:
+    #     """理论上，只要是添加上好友的人，就可以进行直接被拉入各种群，因为已经做了身份验证
 
-        Args:
-            room_invitation (RoomInvitation): the object of room Invitation
-        """
-        print("触发群邀请")
-        inviter = await room_invitation.inviter()
-        await inviter.ready()
+    #     Args:
+    #         room_invitation (RoomInvitation): the object of room Invitation
+    #     """
+    #     print("触发群邀请")
+    #     inviter = await room_invitation.inviter()
+    #     await inviter.ready()
 
-        # TODO: use the temp api to check friend
-        if inviter.payload.friend:
-            await room_invitation.accept()
+    #     # TODO: use the temp api to check friend
+    #     if inviter.payload.friend:
+    #         await room_invitation.accept()
 
-            # sleep to sync the room info
-            await asyncio.sleep(60)
+    #         # sleep to sync the room info
+    #         await asyncio.sleep(60)
 
-            topic = await room_invitation.topic()
-            room = await self.bot.Room.find(topic)
-            if room:
-                self._add_user_room(inviter, topic)
+    #         topic = await room_invitation.topic()
+    #         room = await self.bot.Room.find(topic)
+    #         if room:
+    #             self._add_user_room(inviter, topic)
 
-    async def on_room_join(self, room: Room, invitees: List[Contact], inviter: Contact, date: datetime) -> None:
-        bot_self = self.bot.user_self()
-        is_self_invited_to_room = any([contact.contact_id == bot_self.contact_id for contact in invitees])
+    # async def on_room_join(self, room: Room, invitees: List[Contact], inviter: Contact, date: datetime) -> None:
+    #     bot_self = self.bot.user_self()
+    #     is_self_invited_to_room = any([contact.contact_id == bot_self.contact_id for contact in invitees])
 
-        if is_self_invited_to_room:
-            self._add_user_room(inviter, room.room_id)
+    #     if is_self_invited_to_room:
+    #         self._add_user_room(inviter, room.room_id)
