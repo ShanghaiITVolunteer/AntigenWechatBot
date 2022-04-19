@@ -17,6 +17,9 @@ from wechaty import (
     Contact,
     Message
 )
+from wechaty_puppet import get_logger
+
+logger = get_logger('MessageForwarderPlugin')
 
 
 class MessageForwarderPlugin(WechatyPlugin):
@@ -54,6 +57,7 @@ class MessageForwarderPlugin(WechatyPlugin):
     async def on_message(self, msg: Message) -> None:
         talker = msg.talker()
         room = msg.room()
+        logger.info('on_message: %s %s %s', msg, talker, room)
         # 1. 判断是否是私聊信息
         if room:
             return
@@ -63,7 +67,7 @@ class MessageForwarderPlugin(WechatyPlugin):
             return
 
         # 3. 检查消息发送者是否是居委会成员
-        if talker.contact_id not in self.user2rooms:
+        if talker.contact_id not in self.user2rooms and talker.name not in self.user2rooms:
             return
         
         # 4. 检查该用户是否有邀请入群
