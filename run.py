@@ -4,7 +4,7 @@ import os
 from wechaty import Wechaty, WechatyOptions
 from antigen_bot.plugins import (
     MessageForwarderPlugin,
-    WatchRoomTopicPlugin,
+    # WatchRoomTopicPlugin,
 )
 
 
@@ -16,6 +16,6 @@ if __name__ == "__main__":
     bot = Wechaty(options)
     bot.use([
         MessageForwarderPlugin(),
-        WatchRoomTopicPlugin(),
+        # WatchRoomTopicPlugin(),
     ])
     asyncio.run(bot.start())
