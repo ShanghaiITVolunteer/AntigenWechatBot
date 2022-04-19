@@ -61,6 +61,10 @@ class MessageForwarderPlugin(WechatyPlugin):
         # 1. 判断是否是私聊信息
         if room:
             return
+        
+        if msg.text() == 'ding':
+            await talker.say('dong')
+            return
 
         # 2. 判断是否是自己发送的消息
         if talker.contact_id == self.bot.user_self().contact_id:
