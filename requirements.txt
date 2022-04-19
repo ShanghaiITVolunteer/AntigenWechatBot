@@ -1,3 +1,4 @@
 wechaty
 pandas
 openpyxl
+pyparsing

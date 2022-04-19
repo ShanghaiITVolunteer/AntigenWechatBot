@@ -63,9 +63,17 @@ class AntigenBot(Wechaty):
         super().__init__(options)
     
         self.administrators = ['wxid_a6xxa7n11u5j22']  #管理员名单，项目运营团队
-        self.users = []                                #users = 居委会用户
-        self.user_send_quns = {}                            #users对应的群
-        self.verify_codes = []
+        with open('verify_codes.json', encoding='utf-8') as f:
+            verify_codes = json.load(f)
+            print(verify_codes)
+
+        with open('users.json', encoding='utf-8') as f:
+            users = json.load(f)
+            print(users)
+
+        with open('user_send_quns.json', encoding='utf-8') as f:
+            user_send_quns = json.load(f)
+            print(user_send_quns)
 
         #各种固定文本都维护在这里，可以单独编辑
         with open('pre_words.json', encoding='utf-8') as f:
@@ -76,11 +84,12 @@ class AntigenBot(Wechaty):
         Message Handler for the Bot
         """
 
-        if msg.is_self() or msg.type() == MessageType.MESSAGE_TYPE_UNSPECIFIED:
+        if msg.is_self() or msg.type() in [MessageType.MESSAGE_TYPE_UNSPECIFIED, MessageType.MESSAGE_TYPE_RECALLED]:
             return
 
         talker = msg.talker()
-        #room = msg.room()
+        if msg.room():
+            return
 
         #管理员以文本形式向bot发验证码（一次有效），用户只有凭验证码才能成功添加bot好友，且验证码仅一次有效
         if talker.contact_id in self.administrators:
@@ -90,20 +99,14 @@ class AntigenBot(Wechaty):
 
         #判断是否在users列表里面，如果在的话，把user的信息以"乱序"转发到users所属的群里
         if talker.contact_id in self.users:
-            if msg.type() in [MessageType.MESSAGE_TYPE_IMAGE, MessageType.MESSAGE_TYPE_VIDEO,
-                            MessageType.MESSAGE_TYPE_ATTACHMENT]:
-                file_box_buffer = await msg.to_file_box()
-                random.shuffle(self.user_send_quns[talker.contact_id])
-                for room in self.user_send_quns[talker.contact_id]:
-                    try:
-                        await room.say(file_box_buffer)
-                    except Exception as e:
-                        print(e)
+            if len(user_send_quns[talker.contact_id]) == 0:
+                await msg.say(pre_words['no_qun'])
 
             if msg.type() == MessageType.MESSAGE_TYPE_MINI_PROGRAM:
                 minipro = await msg.to_mini_program()
                 random.shuffle(self.user_send_quns[talker.contact_id])
-                for room in self.user_send_quns[talker.contact_id]:
+                for room_id in self.user_send_quns[talker.contact_id]:
+                    room = await xiaoyan.Room.find(room_id)
                     try:
                         await room.say(minipro)
                     except Exception as e:
@@ -112,7 +115,8 @@ class AntigenBot(Wechaty):
             if msg.type() == MessageType.MESSAGE_TYPE_URL:
                 urlfile = await msg.to_url_link()
                 random.shuffle(self.user_send_quns[talker.contact_id])
-                for room in self.user_send_quns[talker.contact_id]:
+                for room_id in self.user_send_quns[talker.contact_id]:
+                    room = await xiaoyan.Room.find(room_id)
                     try:
                         await room.say(urlfile)
                     except Exception as e:
@@ -120,7 +124,8 @@ class AntigenBot(Wechaty):
 
             if msg.type() == MessageType.MESSAGE_TYPE_TEXT:
                 random.shuffle(self.user_send_quns[talker.contact_id])
-                for room in self.user_send_quns[talker.contact_id]:
+                for room_id in self.user_send_quns[talker.contact_id]:
+                    room = await xiaoyan.Room.find(room_id)
                     try:
                         await msg.forward(room)
                     except Exception as e:
