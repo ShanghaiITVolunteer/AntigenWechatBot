@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+from random import random, shuffle
 from typing import (
     Dict, Optional, List
 )
@@ -73,9 +74,11 @@ class MessageForwarderPlugin(WechatyPlugin):
         # 3. 检查消息发送者是否是居委会成员
         if talker.contact_id not in self.user2rooms and talker.name not in self.user2rooms:
             return
-        
+
         # 4. 检查该用户是否有邀请入群
         room_topics: List[str] = self.user2rooms.get(talker.contact_id, [])
+        shuffle(room_topics)
+
         for room_topic in room_topics:
             room = await self.bot.Room.find(room_topic)
             if not room:
