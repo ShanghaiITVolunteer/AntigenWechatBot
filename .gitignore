@@ -116,3 +116,7 @@ docs/source/_build
 .vscode/
 *.DS_Store
 .wechaty/
+
+# user data file
+message_forwarder.json
+pre_words.json
