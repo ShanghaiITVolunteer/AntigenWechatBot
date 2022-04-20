@@ -19,6 +19,44 @@ An automatic wechat bot that
     
     2. Remind neighbours to do antigen testing and collect antigen results    
     
+## About the Code
+
+Please add 2 files into the main folder before using it: message_forworder.json and pre_words.json.
+
+pre_wrods.json is a json file that contains some default message in case some situations are called. Here is an example:
+
+```
+{
+    "no_support_type": "对不起，该功能暂不支持",
+    "hello_qun": "大家好",
+    "failed_add_qun": "加群失败",
+    "welcome": "欢迎入群",
+    "alias_reminder": "您还没改群名称哦",
+    "no_qun": "您还没有可发送的群", 
+    "no_change": "只有群主可以更改群聊名称哦", 
+    "introduce": "您好呀，从今天起我就是您的社区管理AI小助理啦",
+    "not_user":"不是用户不能拉群，提醒他联系管理员"
+}
+```
+
+message_forworder.json contains some Juweihui's information. Here is the template
+
+```
+{
+    "JuWeihui1 居委会管理员1": [
+        "List Of JuWeiHui1's Group",
+        "居委会管理员1管理的群聊"
+    ],
+    "JuWeihui2 居委会管理员2": [
+        "List Of JuWeiHui2's Group",
+        "居委会管理员2管理的群聊"
+    ],
+    "JuWeihui3 居委会管理员3": [
+        "List Of JuWeiHui3's Group",
+        "居委会管理员3管理的群聊"
+    ]
+}
+```
 
 ## Plan for Deliver news
 

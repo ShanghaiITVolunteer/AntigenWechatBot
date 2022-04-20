@@ -17,17 +17,17 @@ from wechaty import (
 )
 
 administrators = ['wxid_a6xxa7n11u5j22']  #管理员名单，项目运营团队
-with open('verify_codes.json') as f:
+with open('verify_codes.json', encoding='utf-8') as f:
     verify_codes = json.load(f)
     print(verify_codes)
     print("verify_codes loaded successful")
 
-with open('users.json') as f:
+with open('users.json', encoding='utf-8') as f:
     users = json.load(f)
     print(users)
     print("users loaded successful")
 
-with open('user_send_quns.json') as f:
+with open('user_send_quns.json', encoding='utf-8') as f:
     user_send_quns = json.load(f)
     print(user_send_quns)
     print("user send quns loaded successful")
@@ -44,11 +44,14 @@ async def on_message(msg: Message):
     Message Handler for the Bot
     """
 
-    if msg.is_self() or msg.type() in [MessageType.MESSAGE_TYPE_UNSPECIFIED,MessageType.MESSAGE_TYPE_RECALLED]:
+    if msg.is_self() or msg.type() in [MessageType.MESSAGE_TYPE_UNSPECIFIED, MessageType.MESSAGE_TYPE_RECALLED]:
         return
 
     talker = msg.talker()
     #room = msg.room()
+
+    if msg.room():
+        return
 
     #管理员以文本形式向bot发验证码（一次有效），用户只有凭验证码才能成功添加bot好友，且验证码仅一次有效
     if talker.contact_id in administrators:
@@ -64,7 +67,7 @@ async def on_message(msg: Message):
         if len(user_send_quns[talker.contact_id]) == 0:
             await msg.say(pre_words['no_qun'])
             return
-
+        """
         if msg.type() in [MessageType.MESSAGE_TYPE_IMAGE, MessageType.MESSAGE_TYPE_VIDEO,
                           MessageType.MESSAGE_TYPE_ATTACHMENT]:
             file_box_buffer = await msg.to_file_box()
@@ -75,7 +78,7 @@ async def on_message(msg: Message):
                 if room:
                     await room.say(file_box_buffer)
             return
-
+        """
         if msg.type() == MessageType.MESSAGE_TYPE_MINI_PROGRAM:
             minipro = await msg.to_mini_program()
 
