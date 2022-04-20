@@ -99,13 +99,16 @@ class AntigenBot(Wechaty):
 
         #判断是否在users列表里面，如果在的话，把user的信息以"乱序"转发到users所属的群里
         if talker.contact_id in self.users:
-            if len(user_send_quns[talker.contact_id]) == 0:
+
+            qun_query = self.user_send_quns.get(talker.contact_id, [])
+
+            if len(qun_query) == 0:
                 await msg.say(pre_words['no_qun'])
 
             if msg.type() == MessageType.MESSAGE_TYPE_MINI_PROGRAM:
                 minipro = await msg.to_mini_program()
-                random.shuffle(self.user_send_quns[talker.contact_id])
-                for room_id in self.user_send_quns[talker.contact_id]:
+                random.shuffle(qun_query)
+                for room_id in qun_query:
                     room = await xiaoyan.Room.find(room_id)
                     try:
                         await room.say(minipro)
@@ -114,8 +117,8 @@ class AntigenBot(Wechaty):
 
             if msg.type() == MessageType.MESSAGE_TYPE_URL:
                 urlfile = await msg.to_url_link()
-                random.shuffle(self.user_send_quns[talker.contact_id])
-                for room_id in self.user_send_quns[talker.contact_id]:
+                random.shuffle(qun_query)
+                for room_id in qun_query:
                     room = await xiaoyan.Room.find(room_id)
                     try:
                         await room.say(urlfile)
@@ -123,8 +126,8 @@ class AntigenBot(Wechaty):
                         print(e)
 
             if msg.type() == MessageType.MESSAGE_TYPE_TEXT:
-                random.shuffle(self.user_send_quns[talker.contact_id])
-                for room_id in self.user_send_quns[talker.contact_id]:
+                random.shuffle(qun_query)
+                for room_id in qun_query:
                     room = await xiaoyan.Room.find(room_id)
                     try:
                         await msg.forward(room)
