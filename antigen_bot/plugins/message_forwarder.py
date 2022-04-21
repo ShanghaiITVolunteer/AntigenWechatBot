@@ -4,8 +4,9 @@ import re
 from typing import (
     Any, Dict, Optional, List
 )
-from logging import INFO
 from wechaty import (
+    FileBox,
+    MessageType,
     WechatyPlugin,
     Room,
     Message,
@@ -109,6 +110,19 @@ class MessageForwarderPlugin(WechatyPlugin):
         self.logger.info('message: %s', msg)
 
         rooms: List[Room] = await room_finder.match(self.bot)
+
+        file_box = None
+        if msg.type() == MessageType.MESSAGE_TYPE_IMAGE:
+            file_box = await msg.to_file_box()
+            file_path = '.wechaty/' + file_box.name
+            await file_box.to_file(file_path, overwrite=True)
+            file_box = FileBox.from_file(file_path)
+
         for room in rooms:
             self.logger.info('forward to room: %s', room)
-            await msg.forward(room)
+            if file_box is None:
+                await msg.forward(room)
+            else:
+                await room.say(file_box)
+        self.logger.info('=================finish to forward message=================\n\n')
+    
