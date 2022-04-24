@@ -6,3 +6,4 @@ apscheduler
 pandas
 openpyxl
 pyparsing
+dataclasses-json
