@@ -5,3 +5,4 @@ wechaty-plugin-contrib
 apscheduler
 pandas
 openpyxl
+pyparsing
