@@ -16,7 +16,7 @@
 
 ![img](/asset/Collage_20220424_201527.jpg)
 
-![img](/asset/Collage_20220424_201527.jpg)
+![img](/asset/Collage_20220424_201634.jpg)
 
 # 具体使用
 
@@ -44,7 +44,8 @@
 
 我们已经最大化降低对群聊命名格式的要求了，上述例子中Nok部分即便是人类也容易搞错。
 
-on_call_notice.json的参考示例：
+**on_call_notice.json的参考示例：**
+
 {"19310048281@chatroom": 
 {"pre_fix":"test", 
 "送达":{"reply": "团购物资已到，错峰下楼取货喔~", "media": "notice_xiaodu.jpeg"}, 
