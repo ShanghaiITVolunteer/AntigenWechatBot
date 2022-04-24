@@ -137,7 +137,6 @@ class OnCallNoticePlugin(WechatyPlugin):
                 reply = msg_data[id][word].get("reply")
 
                 if "media" in msg_data[id][word].keys():
-                    print("media/" + msg_data[id][word]["media"])
                     file_box = FileBox.from_file("media/" + msg_data[id][word]["media"])
                 words.remove(word)
 
@@ -174,9 +173,10 @@ class OnCallNoticePlugin(WechatyPlugin):
 
         match_list = []
         for word in words:
-            match_list.append(re.compile(r"{0}.*\D{1}\D.*".format(pre_fix, word)))
+            regex = re.compile(r"{0}.*\D{1}\D.*".format(pre_fix, word))
+            match_list.append(regex)
 
-        print(match_list)
+        print(match_list, type(match_list[0]))
         room_finder = RoomFinder(match_list)
         print(room_finder)
         rooms: List[Room] = await room_finder.match(self.bot)
