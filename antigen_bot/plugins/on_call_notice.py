@@ -110,8 +110,9 @@ class OnCallNoticePlugin(WechatyPlugin):
             return
 
         if msg.text() == "查询":
-            if self.last_loop:
-                for record in self.last_loop:
+            records = self.last_loop.get(id, [])
+            if records:
+                for record in records:
                     await msg.say(record)
             else:
                 await msg.say("未查到上一轮通知记录")
@@ -145,7 +146,7 @@ class OnCallNoticePlugin(WechatyPlugin):
             return
 
         # 5. 匹配群进行转发
-        pre_fix = msg_data.get('pre_fix')
+        pre_fix = msg_data[id].get('pre_fix')
 
         if not pre_fix:
             await msg.say("还为配置所属小区，通知未触发")
@@ -183,7 +184,7 @@ class OnCallNoticePlugin(WechatyPlugin):
             await msg.say("未找到可通知的群，请重试")
             return
 
-        self.last_loop = []
+        self.last_loop[id] = []
         for room in rooms:
             await room.say(reply)
             if file_box:
