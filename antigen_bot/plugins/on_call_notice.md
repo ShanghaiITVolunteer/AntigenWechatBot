@@ -2,6 +2,8 @@
 
 按关键词触发预设回复，回复支持文本（必须）、图片（表情图）或视频（可选），并且可设定等待时间（秒为单位）
 
+同一个群里发送"查询"，可以获得上一轮发送结果记录
+
 # 特点
 
 1、最低限度对触发指令的格式要求，只需要包含关键词和指定楼栋群组的数字就行，以上元素排列顺序不限制，中间用空格隔开即可；
@@ -10,21 +12,28 @@
 
 3、支持与现有MessageForwarder以及WatchRoomTopic两个插件的同时部署
 
+# 效果
+
+![img](/asset/Collage_20220424_201527.jpg)
+
+![img](/asset/Collage_20220424_201527.jpg)
+
 # 具体使用
 
-1、侦测"工作群"中或指定联系人的特定格式消息（key_words和楼号数字的任意组合），进行预设通知内容的触发 
+1、侦测"工作群"中或指定联系人的特定格式消息（key_words和楼号数字的任意组合），进行预设通知内容的触发
 
 2、应用于"[团购送达](https://github.com/ShanghaiITVolunteer/AntigenWechatBot/issues/25#issuecomment-1104817261)"、
-        "[核酸提醒](https://github.com/ShanghaiITVolunteer/AntigenWechatBot/issues/25#issuecomment-1104823018)"等需求场景
+"[核酸提醒](https://github.com/ShanghaiITVolunteer/AntigenWechatBot/issues/25#issuecomment-1104823018)"等需求场景
 
 3、配置文件：.wechaty/on_call_notice.json(存储keyword已经对应的回复文本（必须）、群聊名称pre_fix(必须）、回复媒体（存贮在media/）以及延迟时间）
 
 # 注意：
-1、避免配置与其他插件重叠的发送联系人或者群（比如某个人即有权限群发消息又有权限触发通知，那么可能产生误发）；
 
-2、优先判定群。即某个有权限触发通知的人如果在有权限触发通知的群内发消息，实际触发以群内设定为准；
+1、注意规避与其他插件（如MessageForwarder）的配置干扰，比如指定同一个人的对话适用于MessageForwarder和OnCallNotice，那么就可能产生误发（各个插件在业务逻辑上是独立的）；
 
-3、对发送目标群（一般来说是居民群）的群名需要有一定要求：同一小区的各群聊名称必须包含固定元素，该元素需要存储在config文件中的"pre_fix"字段下， 且pre_fix与用于标识具体楼栋的关键字之间要至少间隔一个
+2、OnCallNotice优先判定群。即某个有权限触发通知的人如果在有权限触发通知的群内发消息，实际触发以群内设定为准；
+
+3、对发送目标群（一般来说是居民群）的群名有一定要求：同一小区的各群名称必须包含固定元素，该元素需要存储在config文件中的"pre_fix"字段下， 且pre_fix与用于标识具体楼栋的关键字之间要至少间隔一个
 非数字字符，同时标识关键字之后也必须跟至少一个非数字字符。
 
 比如：
