@@ -4,6 +4,7 @@ from antigen_bot.plugins import (
     MessageForwarderPlugin,
 )
 from antigen_bot.plugins.conv2convs import Conv2ConvsPlugin
+from antigen_bot.plugins.ding_dong import DingDongPlugin
 
 
 if __name__ == "__main__":
@@ -12,13 +13,14 @@ if __name__ == "__main__":
     )
     bot = Wechaty(options)
     bot.use([
-        # MessageForwarderPlugin(
-        #     config_file='.wechaty/message_forwarder_v2.json'
-        # ),
-        # MessageForwarderPlugin(
-        #     options=WechatyPluginOptions(name='MessageForwarderTestPlugin'),
-        #     config_file='.wechaty/message_forwarder_test.json'
-        # ),
+        MessageForwarderPlugin(
+            config_file='.wechaty/message_forwarder_v2.json'
+        ),
+        MessageForwarderPlugin(
+            options=WechatyPluginOptions(name='MessageForwarderTestPlugin'),
+            config_file='.wechaty/message_forwarder_test.json'
+        ),
+        DingDongPlugin(),
         Conv2ConvsPlugin(config_file='.wechaty/conv2convs_config.xlsx')
     ])
     asyncio.run(bot.start())
