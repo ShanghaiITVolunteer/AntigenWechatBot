@@ -3,18 +3,15 @@ import os
 import re
 import time
 from typing import (
-    Any, Dict, Optional, List
-)
+    Any, Dict, Optional,)
 from wechaty import (
     FileBox,
     MessageType,
     WechatyPlugin,
-    Room,
     Message,
     WechatyPluginOptions
 )
 from wechaty_puppet import get_logger
-from wechaty_plugin_contrib.finders.room_finder import RoomFinder
 
 
 class OnCallNoticePlugin(WechatyPlugin):
@@ -53,36 +50,6 @@ class OnCallNoticePlugin(WechatyPlugin):
         with open(self.config_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
         return data
-
-    """
-    def get_room_finder(self) -> Optional[RoomFinder]:
-        get_room_finder with dynamic style
-
-        Returns:
-            RoomFinder: the instance of RoomFinder
-        # 1. init the room finder
-        config = self._load_message_forwarder_configuration()
-
-        options = []
-        if config.get('room_regex', []):
-            for regex in config['room_regex']:
-                options.append(re.compile(regex))
-
-        #on_call_notice一定要拿到群名列表
-
-        if options:
-            return RoomFinder(options)
-        return None
-
-    def get_admin_ids(self) -> List[str]:
-        get the admin ids
-
-        Returns:
-            List[str]: the admin ids
-        
-        config = self._load_message_forwarder_configuration()
-        return config.get('admin_ids', [])
-    """
 
     async def on_message(self, msg: Message) -> None:
         if msg.type() != MessageType.MESSAGE_TYPE_TEXT:
@@ -169,27 +136,24 @@ class OnCallNoticePlugin(WechatyPlugin):
 
         words.extend(words_more)
         words = filter(None, words)
-        words = set(words)
+        regex_words = "|".join(set(words))
+        regex = re.compile(r"{0}.*\D({1})\D.*".format(pre_fix, regex_words))
 
-        match_list = []
-        for word in words:
-            regex = re.compile(r"{0}.*\D{1}\D.*".format(pre_fix, word))
-            match_list.append(regex)
-
-        print(match_list, type(match_list[0]))
-        room_finder = RoomFinder(match_list)
-        print(room_finder)
-        rooms: List[Room] = await room_finder.match(self.bot)
-
-        if not rooms:
-            await msg.say("未找到可通知的群，请重试")
-            return
+        await room.ready()
+        rooms = await self.bot.Room.find_all()
 
         self.last_loop[id] = []
         for room in rooms:
-            await room.say(reply)
-            if file_box:
-                await room.say(file_box)
-            self.last_loop.append(await room.topic())
-        await msg.say("通知已完成，对我说：查询，以查看上一轮发送群聊列表")
+            topic = await room.topic()
+            if regex.search(topic):
+                await room.say(reply)
+                if file_box:
+                    await room.say(file_box)
+                self.last_loop[id].append(topic)
+
         self.logger.info('=================finish to On_call_Notice=================\n\n')
+
+        if self.last_loop[id]:
+            await msg.say("通知已完成，对我说：查询，以查看上一轮发送群聊列表")
+        else:
+            await msg.say("未找到可通知的群，请重试")
