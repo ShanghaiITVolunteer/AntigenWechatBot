@@ -31,7 +31,7 @@ class OnCallNoticePlugin(WechatyPlugin):
         log_file = os.path.join('.wechaty', self.name + '.log')
         self.logger = get_logger(self.name, log_file)
 
-        self.last_loop = []
+        self.last_loop = {}
 
     def _load_message_forwarder_configuration(self) -> Dict[str, Any]:
         """load the message forwarder configuration
@@ -77,7 +77,7 @@ class OnCallNoticePlugin(WechatyPlugin):
             return
 
         if msg.text() == "查询":
-            if self.last_loop[id]:
+            if self.last_loop.get(id, []):
                 for record in self.last_loop[id]:
                     await msg.say(record)
             else:
