@@ -110,9 +110,8 @@ class OnCallNoticePlugin(WechatyPlugin):
             return
 
         if msg.text() == "查询":
-            records = self.last_loop.get(id, [])
-            if records:
-                for record in records:
+            if self.last_loop[id]:
+                for record in self.last_loop[id]:
                     await msg.say(record)
             else:
                 await msg.say("未查到上一轮通知记录")
@@ -177,7 +176,9 @@ class OnCallNoticePlugin(WechatyPlugin):
         for word in words:
             match_list.append(re.compile(r"{0}.*\D{1}\D.*".format(pre_fix, word)))
 
+        print(match_list)
         room_finder = RoomFinder(match_list)
+        print(room_finder)
         rooms: List[Room] = await room_finder.match(self.bot)
 
         if not rooms:
