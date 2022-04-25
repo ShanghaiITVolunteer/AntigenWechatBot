@@ -91,7 +91,7 @@ class MessageForwarderPlugin(WechatyPlugin):
             return
         
         if msg.text() == 'ding':
-            await msg.say('dong')
+            await msg.say('#dong')
             return
 
         # 3. 检查RoomFinder是否存在
@@ -125,4 +125,3 @@ class MessageForwarderPlugin(WechatyPlugin):
             else:
                 await room.say(file_box)
         self.logger.info('=================finish to forward message=================\n\n')
-    

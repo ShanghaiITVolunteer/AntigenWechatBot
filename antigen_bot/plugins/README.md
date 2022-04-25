@@ -24,3 +24,22 @@
 疑问：
 
 1. 如果想要同时想群内转发多条消息，如【消息一】、【消息二】。此时就需要重复执行以上过程多次。
+
+
+### Dyanmic Code
+
+1. 功能介绍：
+
+此插件将生成动态验证码，过期时间和数量都可由调用方自行控制。
+
+2. API 介绍
+
+    * url: server-endpoint:5003/dynamic_code
+    * query_string:
+        * token: str -> to verify the authentication
+        * hours: int -> the expired hours of token
+        * count: int -> the number of the generated tokens
+    
+    * examples:
+        curl http://server-endpoint:[port]/dynamic_code?token=...&hours=2&count=2
+        
