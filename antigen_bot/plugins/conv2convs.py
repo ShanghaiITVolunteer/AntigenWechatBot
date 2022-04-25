@@ -19,6 +19,8 @@ from dataclasses_json import dataclass_json
 import pandas as pd
 from pandas import DataFrame
 
+from antigen_bot.plugins.dynamic_code import DynamicCodePlugin
+
 
 @dataclass_json
 @dataclass
@@ -174,7 +176,8 @@ class Conv2ConvsPlugin(WechatyPlugin):
         command_prefix: str = '#',
         trigger_with_at: bool = True,
         forward_none_command_message: bool = False,
-        say_forward_help_info_to_talker: bool = True
+        say_forward_help_info_to_talker: bool = True,
+        dynamic_code_plugin: Optional[DynamicCodePlugin] = None,
     ) -> None:
         super().__init__(options)
         # 1. init the configs file
@@ -197,6 +200,8 @@ class Conv2ConvsPlugin(WechatyPlugin):
 
         self._rooms: List[Room] = []
         self._contacts: List[Contact] = []
+
+        self.dynamic_code_plugin = dynamic_code_plugin
 
 
     async def get_room(self, id_or_name) -> Optional[Room]:
@@ -348,7 +353,19 @@ class Conv2ConvsPlugin(WechatyPlugin):
 
         # filter the target conversations
         if text.startswith(self.command_prefix):
+            
+            if len(text.split('#')) != 3:
+                await msg.say('检查到格式错误，请按照规范输入，格式为\n@AntigenBot #[动态密码] #[群号] [群号] [你想说的话]')
+                return
+            # parse token & command
             text = text[len(self.command_prefix):]
+            code = text[: text.index('#')].strip()
+            
+            if self.dynamic_code_plugin.is_valid_code(code):
+                await msg.say('动态密码错误，停止转发此消息，切勿骚扰机器人。')
+                return
+
+            text = text[text.index('#') + 1:].strip()
 
             numbers, words = split_number_and_words(text, config.get_names_or_nos())
             for name_or_no in numbers:
@@ -361,7 +378,7 @@ class Conv2ConvsPlugin(WechatyPlugin):
                 msg.payload.text = ' '.join(words)
                 await self.forward_message(msg, conversation_id=conversation_id)
                 self.admin_status.pop(conversation_id)
-
+        
     async def say_forward_help_info(self, msg: Message):
         """say frowarder help info to the talker
 

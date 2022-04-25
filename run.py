@@ -24,6 +24,7 @@ if __name__ == "__main__":
         port=int(os.environ.get('PORT', 8004)),
     )
     bot = Wechaty(options)
+    dynamic_plugin = DynamicCodePlugin()
     bot.use([
         MessageForwarderPlugin(
             config_file='.wechaty/message_forwarder_v2.json'
@@ -32,8 +33,8 @@ if __name__ == "__main__":
             options=WechatyPluginOptions(name='MessageForwarderTestPlugin'),
             config_file='.wechaty/message_forwarder_test.json'
         ),
-        Conv2ConvsPlugin(config_file='.wechaty/conv2convs_config.xlsx'),
-        DynamicCodePlugin(),
+        Conv2ConvsPlugin(config_file='.wechaty/conv2convs_config.xlsx', dynamic_code_plugin=dynamic_plugin),
+        dynamic_plugin,
         HealthCheckPlugin(options=HealthCheckPluginOptions(final_failure_handler=final_failure_handler))
     ])
     asyncio.run(bot.start())

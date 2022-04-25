@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import sys
 from typing import (
     Any, Dict, Optional, List
 )
@@ -91,7 +92,7 @@ class MessageForwarderPlugin(WechatyPlugin):
             return
         
         if msg.text() == 'ding':
-            await msg.say('#dong')
+            await msg.say('dong')
             return
 
         # 3. 检查RoomFinder是否存在

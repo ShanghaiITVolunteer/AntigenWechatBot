@@ -42,4 +42,3 @@
     
     * examples:
         curl http://server-endpoint:[port]/dynamic_code?token=...&hours=2&count=2
-        
