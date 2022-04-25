@@ -1,7 +1,7 @@
 import json
 import os
 import re
-import sys
+import asyncio
 from typing import (
     Any, Dict, Optional, List
 )
@@ -23,7 +23,12 @@ class MessageForwarderPlugin(WechatyPlugin):
         1. 当被邀请入群，则立马同意，同时保存其相关信息。
         2. 如果是私聊的消息，则直接转发给该用户邀请机器人进入的所有群聊当中
     """
-    def __init__(self, options: Optional[WechatyPluginOptions] = None, config_file: str = '.wechaty/message_forwarder.json'):
+    def __init__(
+        self,
+        options: Optional[WechatyPluginOptions] = None,
+        config_file: str = '.wechaty/message_forwarder.json',
+        file_box_interval_seconds: int = 2
+    ):
         super().__init__(options)
         # 1. init the configs file
         self.config_file = config_file
@@ -31,6 +36,7 @@ class MessageForwarderPlugin(WechatyPlugin):
         # 2. save the log info into <plugin_name>.log file
         log_file = os.path.join('.wechaty', self.name + '.log')
         self.logger = get_logger(self.name, log_file)
+        self.file_box_interval_seconds: int = file_box_interval_seconds
 
     def _load_message_forwarder_configuration(self) -> Dict[str, Any]:
         """load the message forwarder configuration
@@ -123,6 +129,9 @@ class MessageForwarderPlugin(WechatyPlugin):
             self.logger.info('forward to room: %s', room)
             if file_box is None:
                 await msg.forward(room)
+                await asyncio.sleep(self.file_box_interval_seconds)
             else:
                 await room.say(file_box)
+                # sleep one second
+                await asyncio.sleep(1)
         self.logger.info('=================finish to forward message=================\n\n')
