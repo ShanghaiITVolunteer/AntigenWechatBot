@@ -139,11 +139,11 @@ class OnCallNoticePlugin(WechatyPlugin):
         regex_words = "|".join(set(words))
         regex = re.compile(r"{0}.*\D({1})\D.*".format(pre_fix, regex_words))
 
-        await room.ready()
         rooms = await self.bot.Room.find_all()
 
         self.last_loop[id] = []
         for room in rooms:
+            await room.ready()
             topic = await room.topic()
             if regex.search(topic):
                 await room.say(reply)
