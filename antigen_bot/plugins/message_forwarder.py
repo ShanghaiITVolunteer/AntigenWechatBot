@@ -89,6 +89,10 @@ class MessageForwarderPlugin(WechatyPlugin):
         # 2. 判断是否是自己发送的消息
         if talker.contact_id == self.bot.user_self().contact_id:
             return
+        
+        if msg.text() == 'ding':
+            await msg.say('dong')
+            return
 
         # 3. 检查RoomFinder是否存在
         room_finder = self.get_room_finder()

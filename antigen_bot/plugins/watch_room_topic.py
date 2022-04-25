@@ -15,14 +15,12 @@ from wechaty import (
     Contact
 )
 
-
 class WatchRoomTopicPlugin(WechatyPlugin):
     """WatchRoomTopicPlugin 
     """
 
     def __init__(self, options: Optional[WechatyPluginOptions] = None):
         super().__init__(options)
-        
         self.please_do_not_change_room_topic = "请不要修改群名称，谢谢！"
 
     async def on_room_topic(self, room: Room, new_topic: str, old_topic: str, changer: Contact, date: datetime) -> None:
