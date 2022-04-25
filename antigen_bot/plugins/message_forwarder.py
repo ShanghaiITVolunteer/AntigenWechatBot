@@ -24,7 +24,7 @@ class MessageForwarderPlugin(WechatyPlugin):
     """
     def __init__(self, options: Optional[WechatyPluginOptions] = None, config_file: str = '.wechaty/message_forwarder.json'):
         super().__init__(options)
-        # 1. init the config file
+        # 1. init the configs file
         self.config_file = config_file
 
         # 2. save the log info into <plugin_name>.log file
@@ -86,12 +86,12 @@ class MessageForwarderPlugin(WechatyPlugin):
         if room:
             return
 
-        if msg.text() == 'ding':
-            await talker.say('dong')
-            return
-
         # 2. 判断是否是自己发送的消息
         if talker.contact_id == self.bot.user_self().contact_id:
+            return
+        
+        if msg.text() == 'ding':
+            await msg.say('#dong')
             return
 
         # 3. 检查RoomFinder是否存在
@@ -125,4 +125,3 @@ class MessageForwarderPlugin(WechatyPlugin):
             else:
                 await room.say(file_box)
         self.logger.info('=================finish to forward message=================\n\n')
-    
