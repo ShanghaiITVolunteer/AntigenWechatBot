@@ -353,15 +353,15 @@ class Conv2ConvsPlugin(WechatyPlugin):
 
         # filter the target conversations
         if text.startswith(self.command_prefix):
-            
+
             if len(text.split('#')) != 3:
                 await msg.say('检查到格式错误，请按照规范输入，格式为\n@AntigenBot #[动态密码] #[群号] [群号] [你想说的话]')
                 return
             # parse token & command
             text = text[len(self.command_prefix):]
             code = text[: text.index('#')].strip()
-            
-            if self.dynamic_code_plugin.is_valid_code(code):
+
+            if not self.dynamic_code_plugin.is_valid_code(code):
                 await msg.say('动态密码错误，停止转发此消息，切勿骚扰机器人。')
                 return
 
