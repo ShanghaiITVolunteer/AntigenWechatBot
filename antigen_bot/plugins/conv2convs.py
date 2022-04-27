@@ -4,7 +4,7 @@ from typing import (
     Dict, Optional, List, Set, Tuple, Union
 )
 from dataclasses import dataclass, field
-import hashlib
+#import hashlib
 from wechaty import (
     Contact,
     FileBox,
@@ -19,7 +19,7 @@ from dataclasses_json import dataclass_json
 import pandas as pd
 from pandas import DataFrame
 
-from antigen_bot.plugins.dynamic_code import DynamicCodePlugin
+from antigen_bot.plugins.dynamic_authory import DynamicAuthorisePlugin
 
 
 @dataclass_json
@@ -90,20 +90,24 @@ class ConfigFactory:
     """Config Factory"""
     def __init__(self, config_file: str) -> None:
         self.file = config_file
-        self.md5 = self._get_md5()
+        #self.md5 = self._get_md5()
 
         self.configs: List[Conv2ConvsConfig] = []
-    
+
+    """
+    bigbrother update：romove the md5 related...
     def _get_md5(self) -> str:
-        """get the md5 sum of the configuration file"""
+        get the md5 sum of the configuration file
         with open(self.file, 'rb') as f:
             data = f.read()
             md5 = hashlib.md5(data).hexdigest()
         return md5
-    
+    """
+
     def instance(self) -> List[Conv2ConvsConfig]:
-        """get the instance the configuration"""
-        if not self.configs or self._get_md5() != self.md5:
+        """get the instance the configuration
+         or self._get_md5() != self.md5"""
+        if not self.configs:
             self.configs = load_from_excel(self.file)
         return self.configs
 
@@ -167,6 +171,8 @@ class Conv2ConvsPlugin(WechatyPlugin):
     功能点：
         1. 当被邀请入群，则立马同意，同时保存其相关信息。
         2. 如果是私聊的消息，则直接转发给该用户邀请机器人进入的所有群聊当中
+    bigbrother updates：
+        更改触发校验的dynamic_code机制为dynamic_authority机制
     """
     def __init__(
         self,
@@ -177,8 +183,8 @@ class Conv2ConvsPlugin(WechatyPlugin):
         trigger_with_at: bool = True,
         forward_none_command_message: bool = False,
         say_forward_help_info_to_talker: bool = True,
-        dynamic_code_plugin: Optional[DynamicCodePlugin] = None,
-    ) -> None:
+        dynamic_plugin: Optional[DynamicAuthorisePlugin] = None,
+    dynamic_authorise_plugin=None) -> None:
         super().__init__(options)
         # 1. init the configs file
 
@@ -201,7 +207,7 @@ class Conv2ConvsPlugin(WechatyPlugin):
         self._rooms: List[Room] = []
         self._contacts: List[Contact] = []
 
-        self.dynamic_code_plugin = dynamic_code_plugin
+        self.dynamic_plugin = dynamic_plugin
 
 
     async def get_room(self, id_or_name) -> Optional[Room]:
@@ -316,6 +322,19 @@ class Conv2ConvsPlugin(WechatyPlugin):
         text = msg.text()
         conversation_id = talker.contact_id + room.room_id
 
+        #判断是否管理员授权信息
+        if await msg.mention_self() and len(await msg.mention_list()) > 1:
+            if talker.contact_id not in self.dynamic_plugin.get_authoriers():
+                return
+            contact_ids = [contact.contact_id for contact in await msg.mention_list()]
+            contact_ids.remove(self.bot.user_self().contact_id)
+            self.dynamic_plugin.authorise(contact_ids)
+            await msg.say("授权完毕，授权期至今日夜12点")
+
+        if self.dynamic_plugin.is_valid(talker.contact_id) == False:
+            await msg.say('今天您不是排班志愿者，无权转发，切勿骚扰机器人。')
+            return
+
         # at 条件触发
         if conversation_id not in self.admin_status and self.trigger_with_at:
             mention_self = await msg.mention_self()
@@ -354,16 +373,11 @@ class Conv2ConvsPlugin(WechatyPlugin):
         # filter the target conversations
         if text.startswith(self.command_prefix):
 
-            if len(text.split('#')) != 3:
-                await msg.say('检查到格式错误，请按照规范输入，格式为\n@AntigenBot #[动态密码] #[群号] [群号] [你想说的话]')
+            if len(text.split('#')) != 2:
+                await msg.say('检查到格式错误，请按照规范输入，格式为\n@AntigenBot #[群号] [群号] [你想说的话]')
                 return
             # parse token & command
             text = text[len(self.command_prefix):]
-            code = text[: text.index('#')].strip()
-
-            if not self.dynamic_code_plugin.is_valid_code(code):
-                await msg.say('动态密码错误，停止转发此消息，切勿骚扰机器人。')
-                return
 
             text = text[text.index('#') + 1:].strip()
 
