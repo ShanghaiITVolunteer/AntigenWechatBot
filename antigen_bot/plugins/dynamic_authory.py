@@ -62,7 +62,8 @@ class DynamicAuthorisePlugin(WechatyPlugin):
             bool: the result of the code
         """
         date = datetime.today().strftime('%Y-%m-%d')
-        if contact_id in self.data[date]:
+        valunters = self.data.get("date", [])
+        if contact_id in valunters:
             self.logger.info('Authorization Check True', date, contact_id)
             return True
         else:
