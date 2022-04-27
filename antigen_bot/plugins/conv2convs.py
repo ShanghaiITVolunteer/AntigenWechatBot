@@ -183,8 +183,7 @@ class Conv2ConvsPlugin(WechatyPlugin):
         trigger_with_at: bool = True,
         forward_none_command_message: bool = False,
         say_forward_help_info_to_talker: bool = True,
-        dynamic_plugin: Optional[DynamicAuthorisePlugin] = None,
-    dynamic_authorise_plugin=None) -> None:
+        dynamic_plugin: Optional[DynamicAuthorisePlugin] = None,) -> None:
         super().__init__(options)
         # 1. init the configs file
 
@@ -329,10 +328,11 @@ class Conv2ConvsPlugin(WechatyPlugin):
             contact_ids = [contact.contact_id for contact in await msg.mention_list()]
             contact_ids.remove(self.bot.user_self().contact_id)
             self.dynamic_plugin.authorise(contact_ids)
-            await msg.say("授权完毕，授权期至今日夜12点")
+            await room.say("授权完毕，授权期至今日夜12点", [talker.contact_id])
+            return
 
         if self.dynamic_plugin.is_valid(talker.contact_id) == False:
-            await msg.say('今天您不是排班志愿者，无权转发，切勿骚扰机器人。')
+            await room.say('今天您不是排班志愿者，无权转发，切勿骚扰机器人。', [talker.contact_id])
             return
 
         # at 条件触发

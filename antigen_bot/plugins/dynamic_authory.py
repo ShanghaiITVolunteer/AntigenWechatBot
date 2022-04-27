@@ -47,6 +47,8 @@ class DynamicAuthorisePlugin(WechatyPlugin):
 
         date = datetime.today().strftime('%Y-%m-%d')
         self.data[date] = contact_ids
+        with open(self.config_file, 'w', encoding='utf-8') as f:
+            json.dump(self.data, f, ensure_ascii=False)
         self.logger.info('Authorization:', date, contact_ids)
         return
 
