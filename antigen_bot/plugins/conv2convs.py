@@ -331,15 +331,16 @@ class Conv2ConvsPlugin(WechatyPlugin):
             await room.say("授权完毕，授权期至今日夜12点", [talker.contact_id])
             return
 
-        if self.dynamic_plugin.is_valid(talker.contact_id) == False:
-            await room.say('今天您不是排班志愿者，无权转发，切勿骚扰机器人。', [talker.contact_id])
-            return
-
         # at 条件触发
         if conversation_id not in self.admin_status and self.trigger_with_at:
             mention_self = await msg.mention_self()
             if not mention_self:
                 return
+
+            if self.dynamic_plugin.is_valid(talker.contact_id) == False:
+                await room.say('今天您不是排班志愿者，无权转发，切勿骚扰机器人。', [talker.contact_id])
+                return
+
             text = await self.remove_at_info(text=text, room_id=room.room_id)
 
         configs: List[Conv2ConvsConfig] = self.config_factory.instance()
