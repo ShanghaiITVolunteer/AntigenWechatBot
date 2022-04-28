@@ -14,7 +14,6 @@ from wechaty import (
 from wechaty_puppet import get_logger
 from datetime import datetime
 
-from antigen_bot.plugins.dynamic_authory import DynamicAuthorisePlugin
 
 class OnCallNoticePlugin(WechatyPlugin):
     """
@@ -58,7 +57,7 @@ class OnCallNoticePlugin(WechatyPlugin):
         date = datetime.today().strftime('%Y-%m-%d')
         for rooter in data.keys():
             if "auth" not in data[rooter].keys():
-                data[rooter][auth] = {date: []}
+                data[rooter]["auth"] = {date: []}
         return data
 
     async def forward_message(self, msg: Message, regex):
@@ -97,7 +96,6 @@ class OnCallNoticePlugin(WechatyPlugin):
 
         self.logger.info('=================finish to On_call_Notice=================\n\n')
 
-
     async def on_message(self, msg: Message) -> None:
         if msg.is_self():
             return
@@ -106,19 +104,19 @@ class OnCallNoticePlugin(WechatyPlugin):
         date = datetime.today().strftime('%Y-%m-%d')
 
         if (talker.contact_id in self.data.keys()) and ("撤销" in msg.text()) and (await msg.mention_self()):
-            if msg.room().room_id in data[talker.contact_id]["auth"].get(date, []):
+            if msg.room().room_id in self.data[talker.contact_id]["auth"].get(date, []):
                 self.data[talker.contact_id]["auth"][date].remove(msg.room().room_id)
                 await msg.say("本群转发授权已经撤销，如需转发，请管理人员再次授权")
             else:
-                await room.say("本群未开启授权，如需授权，请在被授权群中@我发送 授权", [talker.contact_id])
+                await msg.room().say("本群未开启授权，如需授权，请在被授权群中@我发送 授权", [talker.contact_id])
             return
 
         if (talker.contact_id in self.data.keys()) and ("授权" in msg.text()) and (await msg.mention_self()):
-            if date in data[talker.contact_id]["auth"].keys():
+            if date in self.data[talker.contact_id]["auth"].keys():
                 self.data[talker.contact_id]["auth"][date].append(msg.room().room_id)
             else:
                 self.data[talker.contact_id]["auth"][date] = [msg.room().room_id]
-            await room.say("本群授权已开启，如需撤销，请在本群中@我发送 撤销", [talker.contact_id])
+            await msg.room().say("本群授权已开启，如需撤销，请在本群中@我发送 撤销", [talker.contact_id])
             await msg.say("本群已授权开启转发，授权期仅限今日（至凌晨12点）。转发请按如下格式： @我 楼号 内容（均用空格隔开）")
             return
 
@@ -145,6 +143,7 @@ class OnCallNoticePlugin(WechatyPlugin):
 
         text = msg.mention_text()
 
+        token = None
         if id in self.data.keys():
             token = id
         else:
@@ -153,7 +152,6 @@ class OnCallNoticePlugin(WechatyPlugin):
                     if id in value["auth"].get(date, []):
                         token = key
                         break
-
         if token:
             spec = self.data[token]
         else:
