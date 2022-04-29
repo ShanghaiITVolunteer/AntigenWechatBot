@@ -138,7 +138,7 @@ class OnCallNoticePlugin(WechatyPlugin):
                     await msg.say("已转发，@我发送查询，查看转发群记录")
                 return
 
-        if not msg.mention_self():
+        if not await msg.mention_self():
             return
 
         text = msg.mention_text()
