@@ -122,8 +122,12 @@ class OnCallNoticePlugin(WechatyPlugin):
 
         # 3. 判断是否来自工作群或者指定联系人的消息（优先判定群）
         if msg.room():
+            if not await msg.mention_self():
+                return
+            text = await msg.mention_text()
             id = msg.room().room_id
         else:
+            text = msg.text()
             id = talker.contact_id
 
         # 如果是转发状态，那么就逐条转发
@@ -137,11 +141,6 @@ class OnCallNoticePlugin(WechatyPlugin):
                 else:
                     await msg.say("已转发，@我发送查询，查看转发群记录")
                 return
-
-        if not await msg.mention_self():
-            return
-
-        text = msg.mention_text()
 
         token = None
         if id in self.data.keys():
