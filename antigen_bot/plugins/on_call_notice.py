@@ -92,7 +92,7 @@ class OnCallNoticePlugin(WechatyPlugin):
                     self.last_loop[id].append(topic)
 
         if len(self.last_loop[id]) == 0:
-            await msg.say("未找到可通知的群，请重试")
+            await msg.say("呵呵，未找到可通知的群，请重试")
 
         self.logger.info('=================finish to On_call_Notice=================\n\n')
 
@@ -129,7 +129,7 @@ class OnCallNoticePlugin(WechatyPlugin):
         else:
             text = msg.text()
             id = talker.contact_id
-
+        print(text, id)
         # 如果是转发状态，那么就逐条转发
         if id in self.zhuanfa_on.keys():
             if (msg.date() - self.zhuanfa_on[id]["time"]).seconds > 60:
@@ -155,7 +155,7 @@ class OnCallNoticePlugin(WechatyPlugin):
             spec = self.data[token]
         else:
             return
-
+        print(token)
         if text == "查询":
             if self.last_loop.get(id, []):
                 for record in self.last_loop[id]:
@@ -165,6 +165,7 @@ class OnCallNoticePlugin(WechatyPlugin):
             return
 
         words = re.split(r"\s+?", text)
+        print(words)
 
         # 4. 检查msg.text()是否包含关键词
         reply = ""
@@ -192,6 +193,7 @@ class OnCallNoticePlugin(WechatyPlugin):
 
         # 5. 匹配群进行转发
         pre_fix = self.data[token].get('pre_fix')
+        print(pre_fix)
 
         if not pre_fix:
             await msg.say("还未配置所属小区，通知未触发")
@@ -218,6 +220,7 @@ class OnCallNoticePlugin(WechatyPlugin):
         words = filter(None, words)
         regex_words = "|".join(set(words))
         regex = re.compile(r"{0}.*\D({1})\D.*".format(pre_fix, regex_words))
+        print(words)
 
         if "转发" in words:
             self.zhuanfa_on[id]["time"] = msg.date()
