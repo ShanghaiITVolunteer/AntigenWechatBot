@@ -217,8 +217,8 @@ class OnCallNoticePlugin(WechatyPlugin):
                     await msg.say("{0}中所包含的楼栋未成功通知，请按正确指定格式重试".format(word))
 
         words.extend(words_more)
-        words = filter(None, words)
-        regex_words = "|".join(set(words))
+        words = set(filter(None, words))
+        regex_words = "|".join(words)
         regex = re.compile(r"{0}.*\D({1})\D.*".format(pre_fix, regex_words))
         print(words)
 
