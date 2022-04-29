@@ -46,7 +46,11 @@ class DynamicAuthorisePlugin(WechatyPlugin):
     def authorise(self, contact_ids: [str]):
 
         date = datetime.today().strftime('%Y-%m-%d')
-        self.data[date] = contact_ids
+        if date in self.data.keys():
+            self.data[date].append(contact_ids)
+        else:
+            self.data[date] = contact_ids
+
         with open(self.config_file, 'w', encoding='utf-8') as f:
             json.dump(self.data, f, ensure_ascii=False)
         self.logger.info('Authorization:', date, contact_ids)
@@ -62,8 +66,8 @@ class DynamicAuthorisePlugin(WechatyPlugin):
             bool: the result of the code
         """
         date = datetime.today().strftime('%Y-%m-%d')
-        valunters = self.data.get(date, [])
-        if contact_id in valunters:
+        valunteers = self.data.get(date, [])
+        if contact_id in valunteers:
             self.logger.info('Authorization Check True', date, contact_id)
             return True
         else:

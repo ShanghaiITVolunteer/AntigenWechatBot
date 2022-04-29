@@ -4,7 +4,6 @@ from typing import (
     Dict, Optional, List, Set, Tuple, Union
 )
 from dataclasses import dataclass, field
-#import hashlib
 from wechaty import (
     Contact,
     FileBox,
@@ -90,7 +89,6 @@ class ConfigFactory:
     """Config Factory"""
     def __init__(self, config_file: str) -> None:
         self.file = config_file
-        #self.md5 = self._get_md5()
 
         self.configs: List[Conv2ConvsConfig] = []
 
@@ -337,7 +335,7 @@ class Conv2ConvsPlugin(WechatyPlugin):
             if not mention_self:
                 return
 
-            if self.dynamic_plugin.is_valid(talker.contact_id) == False:
+            if not self.dynamic_plugin.is_valid(talker.contact_id):
                 await room.say('今天您不是排班志愿者，无权转发，切勿骚扰机器人。', [talker.contact_id])
                 return
 
