@@ -160,6 +160,11 @@ sequenceDiagram
 
 This automatic bot is not aimed to replace the warm connection between primary-level workers and inhabitants in the community. On the contrary, the bot is aimed to help reduce the waste of time on repeat affairs, so that primary-level workers can have more time to figure out the high-level demand of the inhabitants, and finally better serve the people. We would like to enhance the connection between primary-level government workers and the people, so that help Shanghai to have joint effort to overcome the pandemic!
 
+
+## Wechaty Service Provider
+
+Many thanks to [Padlocal authors](https://github.com/padlocal) for providing TOKNE service support.
+
 ## Advisory Committee
 
 [Huan](https://github.com/huan) [(李卓桓)](http://linkedin.com/in/zixia), Tencent TVP of Chatbot.
