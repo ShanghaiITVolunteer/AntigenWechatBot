@@ -37,6 +37,7 @@ class OnCallNoticePlugin(WechatyPlugin):
         self.data = self._load_message_forwarder_configuration()
         self.listen_to_forward = {}   #记录转发状态
         self.last_loop = {}    #记录上一轮发送群名
+        self._rooms = []
 
     def _load_message_forwarder_configuration(self) -> Dict[str, Any]:
         """load the message forwarder configuration
@@ -67,7 +68,9 @@ class OnCallNoticePlugin(WechatyPlugin):
             msg (Message): the message to forward
             regex (the compile object): the conversation filter
         """
-        rooms = await self.bot.Room.find_all()
+        if not self._rooms:
+            self._rooms = await self.bot.Room.find_all()
+
         self.last_loop[id] = []
 
         if msg.type() in [MessageType.MESSAGE_TYPE_IMAGE, MessageType.MESSAGE_TYPE_VIDEO, MessageType.MESSAGE_TYPE_ATTACHMENT]:
@@ -76,23 +79,20 @@ class OnCallNoticePlugin(WechatyPlugin):
             await file_box.to_file(file_path, overwrite=True)
             file_box = FileBox.from_file(file_path)
 
-            for room in rooms:
+            for room in self._rooms:
                 await room.ready()
-                topic = await room.topic()
+                topic = room.payload.topic
                 if regex.search(topic) and file_box:
                     await room.say(file_box)
                     self.last_loop[id].append(topic)
 
         if msg.type() in [MessageType.MESSAGE_TYPE_TEXT, MessageType.MESSAGE_TYPE_URL, MessageType.MESSAGE_TYPE_MINI_PROGRAM]:
-            for room in rooms:
+            for room in self._rooms:
                 await room.ready()
-                topic = await room.topic()
+                topic = room.payload.topic
                 if regex.search(topic):
                     await msg.forward(room)
                     self.last_loop[id].append(topic)
-
-        if len(self.last_loop[id]) == 0:
-            await msg.say("呵呵，未找到可通知的群，请重试")
 
         self.logger.info('=================finish to On_call_Notice=================\n\n')
 
@@ -137,9 +137,15 @@ class OnCallNoticePlugin(WechatyPlugin):
             else:
                 await self.forward_message(id, msg, self.listen_to_forward[id]['regex'])
                 if msg.room():
-                    await msg.room().say("已转发，@我发送查询，查看转发群记录", [id])
+                    if self.last_loop.get(id, []):
+                        await msg.room().say("已转发，@我并发送查询，查看转发群记录", [id])
+                    else:
+                        await msg.room().say("呵呵，未找到可通知的群，请重试", [id])
                 else:
-                    await msg.say("已转发，@我发送查询，查看转发群记录")
+                    if self.last_loop.get(id, []):
+                        await msg.room().say("已转发，@我并发送查询，查看转发群记录", [id])
+                    else:
+                        await msg.room().say("呵呵，未找到可通知的群，请重试", [id])
                 return
 
         token = None
@@ -199,7 +205,7 @@ class OnCallNoticePlugin(WechatyPlugin):
 
         words_more = []
         for word in words:
-            if re.search(r"\d+[\-\_:：~\u2014\u2026\uff5e\u3002]{1,2}\d+", word, re.A):
+            if re.search(r"\d+[\-:：~\u2014\u2026\uff5e\u3002]{1,2}\d+", word, re.A):
                 two_num = re.findall(r"\d+", word, re.A)
                 if len(two_num) == 2:
                     try:
@@ -223,15 +229,15 @@ class OnCallNoticePlugin(WechatyPlugin):
             self.listen_to_forward[id] = {}
             self.listen_to_forward[id]["time"] = msg.date()
             self.listen_to_forward[id]["regex"] = regex
-            print(self.listen_to_forward[id])
             return
 
-        rooms = await self.bot.Room.find_all()
+        if not self._rooms:
+            self._rooms = await self.bot.Room.find_all()
 
         self.last_loop[id] = []
-        for room in rooms:
+        for room in self._rooms:
             await room.ready()
-            topic = await room.topic()
+            topic = room.payload.topic
             if regex.search(topic):
                 await room.say(reply)
                 if file_box:
@@ -240,7 +246,13 @@ class OnCallNoticePlugin(WechatyPlugin):
 
         self.logger.info('=================finish to On_call_Notice=================\n\n')
 
-        if self.last_loop[id]:
-            await msg.say("通知已完成，对我说：查询，以查看上一轮发送群聊列表")
+        if msg.room():
+            if self.last_loop.get(id, []):
+                await msg.room().say("已转发，@我并发送查询，查看转发群记录", [id])
+            else:
+                await msg.room().say("呵呵，未找到可通知的群，请重试", [id])
         else:
-            await msg.say("未找到可通知的群，请重试")
+            if self.last_loop.get(id, []):
+                await msg.room().say("已转发，@我并发送查询，查看转发群记录", [id])
+            else:
+                await msg.room().say("呵呵，未找到可通知的群，请重试", [id])
