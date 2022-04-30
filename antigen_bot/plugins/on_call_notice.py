@@ -3,12 +3,14 @@ import os
 import re
 import time
 from typing import (
-    Any, Dict, Optional,)
+    Dict, Optional, List, Any
+)
 from wechaty import (
     FileBox,
     MessageType,
     WechatyPlugin,
     Message,
+    Room,
     WechatyPluginOptions
 )
 from wechaty_puppet import get_logger
@@ -37,7 +39,7 @@ class OnCallNoticePlugin(WechatyPlugin):
         self.data = self._load_message_forwarder_configuration()
         self.listen_to_forward = {}   #记录转发状态
         self.last_loop = {}    #记录上一轮发送群名
-        self._rooms = []
+        self._rooms: List[Room] = []
 
     def _load_message_forwarder_configuration(self) -> Dict[str, Any]:
         """load the message forwarder configuration
