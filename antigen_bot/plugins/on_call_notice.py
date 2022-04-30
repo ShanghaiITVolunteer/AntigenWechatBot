@@ -3,14 +3,13 @@ import os
 import re
 import time
 from typing import (
-    Dict, Optional, List, Any
+    Dict, Optional, Any
 )
 from wechaty import (
     FileBox,
     MessageType,
     WechatyPlugin,
     Message,
-    Room,
     WechatyPluginOptions
 )
 from wechaty_puppet import get_logger
@@ -39,7 +38,6 @@ class OnCallNoticePlugin(WechatyPlugin):
         self.data = self._load_message_forwarder_configuration()
         self.listen_to_forward = {}   #记录转发状态
         self.last_loop = {}    #记录上一轮发送群名
-        self._rooms: List[Room] = []
 
     def _load_message_forwarder_configuration(self) -> Dict[str, Any]:
         """load the message forwarder configuration
@@ -70,8 +68,7 @@ class OnCallNoticePlugin(WechatyPlugin):
             msg (Message): the message to forward
             regex (the compile object): the conversation filter
         """
-        if not self._rooms:
-            self._rooms = await self.bot.Room.find_all()
+        rooms = await self.bot.Room.find_all()
 
         self.last_loop[id] = []
 
@@ -81,7 +78,7 @@ class OnCallNoticePlugin(WechatyPlugin):
             await file_box.to_file(file_path, overwrite=True)
             file_box = FileBox.from_file(file_path)
 
-            for room in self._rooms:
+            for room in rooms:
                 await room.ready()
                 topic = await room.topic()
                 if regex.search(topic) and file_box:
@@ -89,7 +86,7 @@ class OnCallNoticePlugin(WechatyPlugin):
                     self.last_loop[id].append(topic)
 
         if msg.type() in [MessageType.MESSAGE_TYPE_TEXT, MessageType.MESSAGE_TYPE_URL, MessageType.MESSAGE_TYPE_MINI_PROGRAM]:
-            for room in self._rooms:
+            for room in rooms:
                 await room.ready()
                 topic = await room.topic()
                 if regex.search(topic):
@@ -233,11 +230,10 @@ class OnCallNoticePlugin(WechatyPlugin):
             self.listen_to_forward[id]["regex"] = regex
             return
 
-        if not self._rooms:
-            self._rooms = await self.bot.Room.find_all()
+        rooms = await self.bot.Room.find_all()
 
         self.last_loop[id] = []
-        for room in self._rooms:
+        for room in rooms:
             await room.ready()
             topic = await room.topic()
             if regex.search(topic):
