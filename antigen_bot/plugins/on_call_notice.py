@@ -241,7 +241,7 @@ class OnCallNoticePlugin(WechatyPlugin):
 
         rooms = await self.bot.Room.find_all()
 
-        self.last_loop[id] = []
+        self.last_loop[talker.contact_id] = []
         for room in rooms:
             await room.ready()
             topic = room.payload.topic
@@ -249,17 +249,17 @@ class OnCallNoticePlugin(WechatyPlugin):
                 await room.say(reply)
                 if file_box:
                     await room.say(file_box)
-                self.last_loop[id].append(topic)
+                self.last_loop[talker.contact_id].append(topic)
 
         self.logger.info('=================finish to On_call_Notice=================\n\n')
 
         if msg.room():
-            if self.last_loop.get(id, []):
+            if self.last_loop.get(talker.contact_id, []):
                 await msg.room().say("已转发，@我并发送查询，查看转发群记录", [talker.contact_id])
             else:
                 await msg.room().say("呵呵，未找到可通知的群，请重试", [talker.contact_id])
         else:
-            if self.last_loop.get(id, []):
+            if self.last_loop.get(talker.contact_id, []):
                 await msg.say("已转发，@我并发送查询，查看转发群记录")
             else:
                 await msg.say("呵呵，未找到可通知的群，请重试")
