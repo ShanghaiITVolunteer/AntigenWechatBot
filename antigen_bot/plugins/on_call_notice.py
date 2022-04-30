@@ -56,9 +56,9 @@ class OnCallNoticePlugin(WechatyPlugin):
         with open(self.config_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
         date = datetime.today().strftime('%Y-%m-%d')
-        for rooter in data.keys():
-            if "auth" not in data[rooter].keys():
-                data[rooter]["auth"] = {date: []}
+        for id in data.keys():
+            if "auth" not in data[id].keys():
+                data[id]["auth"] = {date: []}
         return data
 
     async def forward_message(self, id, msg: Message, regex):
@@ -119,6 +119,21 @@ class OnCallNoticePlugin(WechatyPlugin):
             await msg.say("本群已授权开启转发，授权期仅限今日（至凌晨12点）。转发请按如下格式： @我 楼号 内容（均用空格隔开）")
             return
 
+        # 如果是转发状态，那么就直接转发
+        if talker.contact_id in self.listen_to_forward.keys():
+            await self.forward_message(talker.contact_id, msg, self.listen_to_forward[talker.contact_id])
+            if msg.room():
+                if self.last_loop.get(talker.contact_id, []):
+                    await msg.room().say("已转发，@我并发送查询，查看转发群记录", [talker.contact_id])
+                else:
+                    await msg.room().say("呵呵，未找到可通知的群，请重试", [talker.contact_id])
+            else:
+                if self.last_loop.get(talker.contact_id, []):
+                    await msg.say("已转发，@我并发送查询，查看转发群记录")
+                else:
+                    await msg.say("呵呵，未找到可通知的群，请重试")
+            return
+
         # 3. 判断是否来自工作群或者指定联系人的消息（优先判定群）
         if msg.room():
             if not await msg.mention_self():
@@ -129,33 +144,15 @@ class OnCallNoticePlugin(WechatyPlugin):
             text = msg.text()
             id = talker.contact_id
 
-        # 如果是转发状态，那么就逐条转发
-        if id in self.listen_to_forward.keys():
-            if (msg.date() - self.listen_to_forward[id]["time"]).seconds > 60:
-                del self.listen_to_forward[id]
-            else:
-                await self.forward_message(id, msg, self.listen_to_forward[id]['regex'])
-                if msg.room():
-                    if self.last_loop.get(id, []):
-                        await msg.room().say("已转发，@我并发送查询，查看转发群记录", [id])
-                    else:
-                        await msg.room().say("呵呵，未找到可通知的群，请重试", [id])
-                else:
-                    if self.last_loop.get(id, []):
-                        await msg.say("已转发，@我并发送查询，查看转发群记录")
-                    else:
-                        await msg.say("呵呵，未找到可通知的群，请重试")
-                return
-
         token = None
         if id in self.data.keys():
             token = id
         else:
             for key, value in self.data.items():
-                if "auth" in value.keys():
-                    if id in value["auth"].get(date, []):
-                        token = key
-                        break
+                if id in value["auth"].get(date, []):
+                    token = key
+                    break
+
         if token:
             spec = self.data[token]
         else:
@@ -225,9 +222,7 @@ class OnCallNoticePlugin(WechatyPlugin):
         regex = re.compile(r"{0}.*\D({1})\D.*".format(pre_fix, regex_words))
 
         if "转发" in words:
-            self.listen_to_forward[id] = {}
-            self.listen_to_forward[id]["time"] = msg.date()
-            self.listen_to_forward[id]["regex"] = regex
+            self.listen_to_forward[talker.contact_id] = regex
             return
 
         rooms = await self.bot.Room.find_all()
@@ -246,9 +241,9 @@ class OnCallNoticePlugin(WechatyPlugin):
 
         if msg.room():
             if self.last_loop.get(id, []):
-                await msg.room().say("已转发，@我并发送查询，查看转发群记录", [id])
+                await msg.room().say("已转发，@我并发送查询，查看转发群记录", [talker.contact_id])
             else:
-                await msg.room().say("呵呵，未找到可通知的群，请重试", [id])
+                await msg.room().say("呵呵，未找到可通知的群，请重试", [talker.contact_id])
         else:
             if self.last_loop.get(id, []):
                 await msg.say("已转发，@我并发送查询，查看转发群记录")
