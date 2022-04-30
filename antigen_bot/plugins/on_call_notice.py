@@ -80,7 +80,7 @@ class OnCallNoticePlugin(WechatyPlugin):
 
             for room in rooms:
                 await room.ready()
-                topic = await room.topic()
+                topic = room.payload.topic
                 if regex.search(topic) and file_box:
                     await room.say(file_box)
                     self.last_loop[id].append(topic)
@@ -88,7 +88,7 @@ class OnCallNoticePlugin(WechatyPlugin):
         if msg.type() in [MessageType.MESSAGE_TYPE_TEXT, MessageType.MESSAGE_TYPE_URL, MessageType.MESSAGE_TYPE_MINI_PROGRAM]:
             for room in rooms:
                 await room.ready()
-                topic = await room.topic()
+                topic = room.payload.topic
                 if regex.search(topic):
                     await msg.forward(room)
                     self.last_loop[id].append(topic)
@@ -142,9 +142,9 @@ class OnCallNoticePlugin(WechatyPlugin):
                         await msg.room().say("呵呵，未找到可通知的群，请重试", [id])
                 else:
                     if self.last_loop.get(id, []):
-                        await msg.room().say("已转发，@我并发送查询，查看转发群记录", [id])
+                        await msg.say("已转发，@我并发送查询，查看转发群记录")
                     else:
-                        await msg.room().say("呵呵，未找到可通知的群，请重试", [id])
+                        await msg.say("呵呵，未找到可通知的群，请重试")
                 return
 
         token = None
@@ -235,7 +235,7 @@ class OnCallNoticePlugin(WechatyPlugin):
         self.last_loop[id] = []
         for room in rooms:
             await room.ready()
-            topic = await room.topic()
+            topic = room.payload.topic
             if regex.search(topic):
                 await room.say(reply)
                 if file_box:
@@ -251,6 +251,6 @@ class OnCallNoticePlugin(WechatyPlugin):
                 await msg.room().say("呵呵，未找到可通知的群，请重试", [id])
         else:
             if self.last_loop.get(id, []):
-                await msg.room().say("已转发，@我并发送查询，查看转发群记录", [id])
+                await msg.say("已转发，@我并发送查询，查看转发群记录")
             else:
-                await msg.room().say("呵呵，未找到可通知的群，请重试", [id])
+                await msg.say("呵呵，未找到可通知的群，请重试")
