@@ -83,7 +83,7 @@ class OnCallNoticePlugin(WechatyPlugin):
 
             for room in self._rooms:
                 await room.ready()
-                topic = room.payload.topic
+                topic = await room.topic()
                 if regex.search(topic) and file_box:
                     await room.say(file_box)
                     self.last_loop[id].append(topic)
@@ -91,7 +91,7 @@ class OnCallNoticePlugin(WechatyPlugin):
         if msg.type() in [MessageType.MESSAGE_TYPE_TEXT, MessageType.MESSAGE_TYPE_URL, MessageType.MESSAGE_TYPE_MINI_PROGRAM]:
             for room in self._rooms:
                 await room.ready()
-                topic = room.payload.topic
+                topic = await room.topic()
                 if regex.search(topic):
                     await msg.forward(room)
                     self.last_loop[id].append(topic)
@@ -239,7 +239,7 @@ class OnCallNoticePlugin(WechatyPlugin):
         self.last_loop[id] = []
         for room in self._rooms:
             await room.ready()
-            topic = room.payload.topic
+            topic = await room.topic()
             if regex.search(topic):
                 await room.say(reply)
                 if file_box:
