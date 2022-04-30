@@ -35,7 +35,7 @@ class OnCallNoticePlugin(WechatyPlugin):
         #self.dynamic_plugin = dynamic_plugin
 
         self.data = self._load_message_forwarder_configuration()
-        self.zhuanfa_on = {}   #记录转发状态
+        self.listen_to_forward = {}   #记录转发状态
         self.last_loop = {}    #记录上一轮发送群名
 
     def _load_message_forwarder_configuration(self) -> Dict[str, Any]:
@@ -131,11 +131,11 @@ class OnCallNoticePlugin(WechatyPlugin):
             id = talker.contact_id
 
         # 如果是转发状态，那么就逐条转发
-        if id in self.zhuanfa_on.keys():
-            if (msg.date() - self.zhuanfa_on[id]["time"]).seconds > 60:
-                del self.zhuanfa_on[id]
+        if id in self.listen_to_forward.keys():
+            if (msg.date() - self.listen_to_forward[id]["time"]).seconds > 60:
+                del self.listen_to_forward[id]
             else:
-                await self.forward_message(id, msg, self.zhuanfa_on[id]['regex'])
+                await self.forward_message(id, msg, self.listen_to_forward[id]['regex'])
                 if msg.room():
                     await msg.room().say("已转发，@我发送查询，查看转发群记录", [id])
                 else:
@@ -220,9 +220,10 @@ class OnCallNoticePlugin(WechatyPlugin):
         regex = re.compile(r"{0}.*\D({1})\D.*".format(pre_fix, regex_words))
 
         if "转发" in words:
-            self.zhuanfa_on[id]["time"] = msg.date()
-            self.zhuanfa_on[id]["regex"] = regex
-            print(self.zhuanfa_on[id])
+            self.listen_to_forward[id] = {}
+            self.listen_to_forward[id]["time"] = msg.date()
+            self.listen_to_forward[id]["regex"] = regex
+            print(self.listen_to_forward[id])
             return
 
         rooms = await self.bot.Room.find_all()
