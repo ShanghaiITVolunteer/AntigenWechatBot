@@ -121,7 +121,13 @@ class OnCallNoticePlugin(WechatyPlugin):
 
         # 如果是转发状态，那么就直接转发
         if talker.contact_id in self.listen_to_forward.keys():
-            await self.forward_message(talker.contact_id, msg, self.listen_to_forward[talker.contact_id])
+            #群消息要先鉴权
+            if msg.room():
+                if self.listen_to_forward[talker.contact_id][2] not in self.data[self.listen_to_forward[talker.contact_id][1]]["auth"].get(date, []):
+                    del self.listen_to_forward[talker.contact_id]
+                    return
+
+            await self.forward_message(talker.contact_id, msg, self.listen_to_forward[talker.contact_id][0])
             if msg.room():
                 if self.last_loop.get(talker.contact_id, []):
                     await msg.room().say("已转发，@我并发送查询，查看转发群记录", [talker.contact_id])
@@ -132,6 +138,7 @@ class OnCallNoticePlugin(WechatyPlugin):
                     await msg.say("已转发，@我并发送查询，查看转发群记录")
                 else:
                     await msg.say("呵呵，未找到可通知的群，请重试")
+            del self.listen_to_forward[talker.contact_id]
             return
 
         # 3. 判断是否来自工作群或者指定联系人的消息（优先判定群）
@@ -222,7 +229,8 @@ class OnCallNoticePlugin(WechatyPlugin):
         regex = re.compile(r"{0}.*\D({1})\D.*".format(pre_fix, regex_words))
 
         if "转发" in words:
-            self.listen_to_forward[talker.contact_id] = regex
+            self.listen_to_forward[talker.contact_id] = [regex, token, id]
+            #这一步分别存储 转发规则、授权来源和对话号，后二者用于后续鉴权
             return
 
         rooms = await self.bot.Room.find_all()
