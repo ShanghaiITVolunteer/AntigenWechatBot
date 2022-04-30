@@ -227,11 +227,11 @@ class OnCallNoticePlugin(WechatyPlugin):
 
         words.extend(words_more)
         words = set(filter(None, words))
-        if len(words) == 0:
-            await msg.say("呵呵，未找到可通知的群，请重试")
-            return
 
         regex_words = "|".join(words)
+        if len(regex_words) == 0:
+            await msg.say("呵呵，未找到可通知的群，请重试")
+            return
         regex = re.compile(r"{0}.*\D({1})\D.*".format(pre_fix, regex_words))
 
         if "转发" in words:
