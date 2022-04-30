@@ -1,4 +1,5 @@
 """Unit test for room2rooms.py"""
+import os
 from typing import List
 import pytest
 
@@ -89,3 +90,11 @@ def test_split_numbers_and_words():
     numbers, words = split_number_and_words(text, pretrained_numbers=numbers)
     assert numbers == ['3', '8', '8.3']
     assert words == ['你好']
+
+
+def test_name_split():
+    """test name split"""
+    file_name = 'aa.jpg'
+    name, file_type = os.path.splitext(file_name)
+    assert name == 'aa'
+    assert file_type == '.jpg'
