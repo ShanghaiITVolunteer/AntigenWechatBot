@@ -96,7 +96,7 @@ class OnCallNoticePlugin(WechatyPlugin):
         self.logger.info('=================finish to On_call_Notice=================\n\n')
 
     async def on_message(self, msg: Message) -> None:
-        if msg.is_self():
+        if msg.is_self() or msg.talker().contact_id == "weixin":
             return
 
         talker = msg.talker()
