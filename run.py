@@ -32,9 +32,9 @@ if __name__ == "__main__":
             options=WechatyPluginOptions(name='MessageForwarderTestPlugin'),
             config_file='.wechaty/message_forwarder_test.json'
         ),
-        OnCallNoticePlugin(
-            config_file='.wechaty/on_call_notice.json'
-        ),
+        # OnCallNoticePlugin(
+        #     config_file='.wechaty/on_call_notice.json'
+        # ),
         HealthCheckPlugin(options=HealthCheckPluginOptions(final_failure_handler=final_failure_handler)),
         Conv2ConvsPlugin(config_file='.wechaty/conv2convs_config.xlsx', dynamic_plugin=dynamic_plugin),
         dynamic_plugin,
