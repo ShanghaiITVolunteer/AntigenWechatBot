@@ -96,7 +96,7 @@ class OnCallNoticePlugin(WechatyPlugin):
         self.logger.info('=================finish to On_call_Notice=================\n\n')
 
     async def on_message(self, msg: Message) -> None:
-        if msg.is_self():
+        if msg.is_self() or msg.talker().contact_id == "weixin":
             return
 
         talker = msg.talker()
@@ -125,6 +125,7 @@ class OnCallNoticePlugin(WechatyPlugin):
             if msg.room():
                 if self.listen_to_forward[talker.contact_id][2] not in self.data[self.listen_to_forward[talker.contact_id][1]]["auth"].get(date, []):
                     del self.listen_to_forward[talker.contact_id]
+                    await msg.say("呵呵，你的权限刚刚被取消了哦~")
                     return
 
             await self.forward_message(talker.contact_id, msg, self.listen_to_forward[talker.contact_id][0])
@@ -151,6 +152,14 @@ class OnCallNoticePlugin(WechatyPlugin):
             text = msg.text()
             id = talker.contact_id
 
+        if text == "查询":
+            if self.last_loop.get(talker.contact_id, []):
+                for record in self.last_loop[talker.contact_id]:
+                    await msg.say(record)
+            else:
+                await msg.say("未查到对应您的上一轮通知记录")
+            return
+
         token = None
         if id in self.data.keys():
             token = id
@@ -163,14 +172,7 @@ class OnCallNoticePlugin(WechatyPlugin):
         if token:
             spec = self.data[token]
         else:
-            return
-
-        if text == "查询":
-            if self.last_loop.get(id, []):
-                for record in self.last_loop[id]:
-                    await msg.say(record)
-            else:
-                await msg.say("未查到上一轮通知记录")
+            await msg.say("呵呵，你没有权限哦~")
             return
 
         words = re.split(r"\s+?", text)
@@ -225,7 +227,11 @@ class OnCallNoticePlugin(WechatyPlugin):
 
         words.extend(words_more)
         words = set(filter(None, words))
+
         regex_words = "|".join(words)
+        if len(regex_words) == 0:
+            await msg.say("呵呵，未找到可通知的群，请重试")
+            return
         regex = re.compile(r"{0}.*\D({1})\D.*".format(pre_fix, regex_words))
 
         if "转发" in words:
@@ -235,7 +241,7 @@ class OnCallNoticePlugin(WechatyPlugin):
 
         rooms = await self.bot.Room.find_all()
 
-        self.last_loop[id] = []
+        self.last_loop[talker.contact_id] = []
         for room in rooms:
             await room.ready()
             topic = room.payload.topic
@@ -243,17 +249,17 @@ class OnCallNoticePlugin(WechatyPlugin):
                 await room.say(reply)
                 if file_box:
                     await room.say(file_box)
-                self.last_loop[id].append(topic)
+                self.last_loop[talker.contact_id].append(topic)
 
         self.logger.info('=================finish to On_call_Notice=================\n\n')
 
         if msg.room():
-            if self.last_loop.get(id, []):
+            if self.last_loop.get(talker.contact_id, []):
                 await msg.room().say("已转发，@我并发送查询，查看转发群记录", [talker.contact_id])
             else:
                 await msg.room().say("呵呵，未找到可通知的群，请重试", [talker.contact_id])
         else:
-            if self.last_loop.get(id, []):
+            if self.last_loop.get(talker.contact_id, []):
                 await msg.say("已转发，@我并发送查询，查看转发群记录")
             else:
                 await msg.say("呵呵，未找到可通知的群，请重试")
