@@ -18,9 +18,9 @@ from wechaty_puppet import get_logger
 from antigen_bot.plugins.dynamic_authorization import (
     DynamicAuthorizationPlugin,
     Conv2ConvsConfig,
-    Conversation,
     ConfigFactory
 )
+from antigen_bot.forward_config import Conversation
 from antigen_bot.utils import remove_at_info
 
 

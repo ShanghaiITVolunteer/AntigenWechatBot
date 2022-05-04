@@ -1,61 +1,13 @@
 """Define the forward configuration"""
 from __future__ import annotations
-from abc import abstractmethod
-from typing import List, Literal, Tuple, Union
-from dataclasses import dataclass
+from datetime import datetime
+import os
+from typing import Dict, Optional, List
+import hashlib
+from dataclasses import dataclass, field
+
+from pandas import DataFrame, read_excel
 from dataclasses_json import dataclass_json
-from pandas import ExcelFile, DataFrame, Series
-from wechaty import Contact, ContactPayload, Room, RoomPayload
-
-
-from antigen_bot.matcher import Matcher, MatcherOption
-
-
-class ConfigStorer:
-    
-    @abstractmethod
-    def add(self, group: str, forwarder: Matcher, receiver: Matcher) -> None:
-        """save the config"""
-        raise NotImplementedError
-    
-    @abstractmethod
-    def remove(self, forwarder: Matcher, receiver: Matcher) -> None:
-        """remove the config"""
-        raise NotImplementedError
-    
-    @abstractmethod
-    def get(self, group: str) -> Tuple[List[Matcher], List[Matcher]]:
-        """get the forwarders and receivers by the group name"""
-        raise NotImplementedError
-
-
-class ExcelConfigStorer(ConfigStorer):
-    def __init__(self, excel_file: str, engine: str = 'openpyxl') -> None:
-        self.excel_file = excel_file
-        self.engine = engine
-
-    def all_groups(self) -> List[str]:
-        excel = ExcelFile(self.excel_file, engine=self.engine)
-        return excel.sheet_names
-    
-    def _add_record(self, group: str, matcher: Matcher, type: Literal['forwarder', 'receiver']) -> None:
-        excel = ExcelFile(self.excel_file, engine=self.engine)
-        sheet: DataFrame = excel.parse(group)
-        sheet.add(Series())
-        sheet.to_excel(self.excel_file, engine=self.engine)
-
-    def add(self, group: str, forwarder: Matcher, receiver: Matcher):
-        forwarders, receivers = self.get(group)
-        forwarder_md5, receiver_md5 = forwarder.md5(), receiver.md5()
-
-        if not [_forwarder for _forwarder in forwarders if _forwarder.md5() == forwarder_md5]:
-            self._add_record(group, forwarder, 'forwarder')
-
-        if not [_receiver for _receiver in receivers if _receiver.md5() == receiver_md5]:
-            self._add_record(group, receiver, 'receiver')
- 
-
-        
 
 @dataclass_json
 @dataclass
@@ -129,23 +81,57 @@ class Conv2ConvsConfig:
         self.admins[conversation.id] = conversation
 
 
+def load_from_excel(file: str) -> List[Conv2ConvsConfig]:
+    """load the configuration from excel file"""
+    # 1. load configuration from excel file
+    group_df: DataFrame = read_excel(file, sheet_name='group')
+    admin_df: DataFrame = read_excel(file, sheet_name='admins')
+
+    # 2. build the configuration
+    configs: List[Conv2ConvsConfig] = []
+    group_names = list(set(group_df.group_name))
+
+    for group_name in group_names:
+        config: Conv2ConvsConfig = Conv2ConvsConfig(name=group_name)
+
+        group_df_group_name = group_df[group_df.group_name == group_name]
+        for _, row in group_df_group_name.iterrows():
+            config.target_conversations[str(row.id)] = Conversation(
+                name=row['name'],
+                id=row['id'],
+                type=row['type'],
+                no=row['no']
+            )
+        admin_df_group_name = admin_df[admin_df.group_name == group_name]
+        for _, row in admin_df_group_name.iterrows():
+            config.admins[str(row.id)] = Conversation(
+                name=row['name'],
+                id=row['id'],
+                type=row['type'],
+                no=row['no']
+            )
+        configs.append(config)
+    return configs
+
+
 class ConfigFactory:
     """Config Factory"""
     def __init__(self, config_file: str) -> None:
         self.file = config_file
-        self.md5 = self._get_md5()
+        self.mtime = self._get_mtime()
 
         self.configs: List[Conv2ConvsConfig] = []
     
-    def _get_md5(self) -> str:
+    def _get_mtime(self) -> datetime:
         """get the md5 sum of the configuration file"""
-        with open(self.file, 'rb') as f:
-            data = f.read()
-            md5 = hashlib.md5(data).hexdigest()
-        return md5
+        return os.path.getmtime(self.file)
     
+    def config_changed(self) -> bool:
+        """check that if the config file changes"""
+        return self._get_mtime() != self.mtime
+
     def instance(self) -> List[Conv2ConvsConfig]:
         """get the instance the configuration"""
-        if not self.configs or self._get_md5() != self.md5:
+        if not self.configs or self.config_changed():
             self.configs = load_from_excel(self.file)
         return self.configs
