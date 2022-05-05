@@ -178,7 +178,7 @@ class Matcher:
             str: the md5 string
         """
         md5_strings = set([option.md5() for option in self.options])
-        return ','.join(md5_strings) 
+        return ','.join(md5_strings)
 
     def __eq__(self, other_matcher: object) -> bool:
         if not other_matcher:
@@ -188,9 +188,9 @@ class Matcher:
 
         source_strings = set([option.union_str() for option in self.options])
         other_strings = set([option.union_str() for option in other_matcher.options])
-        
+
         return len(source_strings - other_strings) == 0 and len(other_strings - source_strings) == 0
-        
+
 
 def load_matcher_option_from_file(config_file: str) -> List[MatcherOption]:
     """load matcher option from file"""
