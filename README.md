@@ -12,13 +12,13 @@ AntigenWechatBot是一个用于为基层干部（居委会干部）赋能的微�
 
 ## 快速上手
 
-### Python-Wechaty & Token
+### 前提：Python-Wechaty & Token
 
 此项目基于[python-wechaty](https://github.com/wechaty/python-wechaty)开发，如若各位开发者想要部署在自己小区，需提前了解具体用法，请移步到[官网文档](https://wechaty.readthedocs.io/zh_CN/latest/)。
 
 要运行机器人首先需要[Token](https://wechaty.js.org/docs/puppet-services/tokens/)，如果已有对应Token且已然熟悉python-wechaty的使用，则可直接运行，否则可使用志愿者提供的机器人服务，具体细节可扫本页底部群二维码进群沟通。
 
-### Install
+### 安装 
 
 ```shell
 git clone https://github.com/ShanghaiITVolunteer/AntigenWechatBot
@@ -84,49 +84,12 @@ pip install -r requirements.txt
 
 **欢迎大家提[Issue](https://github.com/ShanghaiITVolunteer/AntigenWechatBot/issues/new)来讨论更多实用的功能。**
 
-## 需求
 
-自动化微信机器人的功能需求如下所示：
+### 运行
 
-    1. 分发疫情信息以及团购信息  
-    
-    2. 提醒居民做抗原测试及采集抗原测试结果  
-## 代码展示
-
-`pre_wrods.json`是一个包含可配置型的消息回复模板文件：
-
+```shell
+python run.py
 ```
-{
-    "no_support_type": "对不起，该功能暂不支持",
-    "hello_qun": "大家好",
-    "failed_add_qun": "加群失败",
-    "welcome": "欢迎入群",
-    "alias_reminder": "您还没改群名称哦",
-    "no_qun": "您还没有可发送的群", 
-    "no_change": "只有群主可以更改群聊名称哦", 
-    "introduce": "您好呀，从今天起我就是您的社区管理AI小助理啦",
-    "not_user":"不是用户不能拉群，提醒他联系管理员"
-}
-```
-
-`message_forworder.json`为居委会消息转发的配置文件，以下为示例配置：
-```
-{
-    "JuWeihui1 居委会管理员1": [
-        "List Of JuWeiHui1's Group",
-        "居委会管理员1管理的群聊"
-    ],
-    "JuWeihui2 居委会管理员2": [
-        "List Of JuWeiHui2's Group",
-        "居委会管理员2管理的群聊"
-    ],
-    "JuWeihui3 居委会管理员3": [
-        "List Of JuWeiHui3's Group",
-        "居委会管理员3管理的群聊"
-    ]
-}
-```
-
 ## 开发计划
 
 ### 第一阶段

@@ -8,3 +8,6 @@ openpyxl
 pyparsing
 dataclasses-json
 python-dotenv
+pdfkit
+asq
+git+https://github.com/ShanghaiITVolunteer/JuWeiHui.git
