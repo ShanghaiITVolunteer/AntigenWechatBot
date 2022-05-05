@@ -2,14 +2,15 @@
 import os
 from typing import List
 import pytest
-
-import pytest_asyncio
 from antigen_bot.plugins.conv2convs import (
-    Conv2ConvsConfig,
     Conv2ConvsPlugin,
-    load_from_excel,
     split_number_and_words
 )
+from antigen_bot.plugins.dynamic_authorization import (
+    Conv2ConvsConfig,
+    load_from_excel
+)
+from antigen_bot.utils import remove_at_info
 
 
 def test_config():
@@ -48,7 +49,7 @@ async def test_remove_at_info():
     file = './tests/data/conv2convs_multi_config.xlsx'
     plugin = Conv2ConvsPlugin(config_file=file)
     at_info = '@AntigenBot hello'
-    info = await plugin.remove_at_info(at_info, 'room_id')
+    info = remove_at_info(at_info)
     assert info == 'hello'
 
 
@@ -58,7 +59,7 @@ async def test_remove_at_info_with_many_person():
     file = './tests/data/conv2convs_multi_config.xlsx'
     plugin = Conv2ConvsPlugin(config_file=file)
     at_info = '@AntigenBot\u0020@wj-Mcat\u0020@wj-Mcat\u2005hello'
-    info = await plugin.remove_at_info(at_info, 'room_id')
+    info = remove_at_info(at_info)
     assert info == 'hello'
 
 
@@ -68,7 +69,7 @@ async def test_remove_at_info_with_command():
     file = './tests/data/conv2convs_multi_config.xlsx'
     plugin = Conv2ConvsPlugin(config_file=file)
     at_info = '@AntigenBot\u0020#3 hello'
-    info = await plugin.remove_at_info(at_info, 'room_id')
+    info = remove_at_info(at_info)
     assert info == '#3 hello'
 
 
@@ -91,6 +92,15 @@ def test_split_numbers_and_words():
     assert numbers == ['3', '8', '8.3']
     assert words == ['你好']
 
+    text = '3-8 您好'
+    numbers, words = split_number_and_words(text, [])
+    assert numbers == [str(number) for number in range(3, 9)]
+    assert words == ['您好']
+
+    text = '3 - 8 您好'
+    numbers, words = split_number_and_words(text, [])
+    assert numbers == [str(number) for number in range(3, 9)]
+    assert words == ['您好']
 
 def test_name_split():
     """test name split"""
