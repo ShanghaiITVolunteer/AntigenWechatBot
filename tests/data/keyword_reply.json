@@ -1,14 +1,22 @@
 [
     {
         "keyword": "hello",
+        "convs": [
+            {
+                "name": "contact-name",
+                "id": "contact-id",
+                "type": "Contact",
+                "no": "0"
+            },
+            {
+                "name": "room-topic",
+                "id": "room-id",
+                "type": "Room",
+                "no": "1"
+            }
+        ],
         "msgs": [
             "world"
-        ]
-    },
-    {
-        "keyword": "核酸",
-        "msgs": [
-            "各楼栋居民准备下楼做核酸了"
         ]
     }
 ]
