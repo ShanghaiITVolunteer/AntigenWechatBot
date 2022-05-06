@@ -16,8 +16,7 @@ from wechaty import (
 )
 from quart import Quart, jsonify
 from wechaty_puppet import get_logger
-
-# keep consist with http code
+from antigen_bot.message_controller import MessageController
 
 
 class HealthCheckerStatus(Enum):

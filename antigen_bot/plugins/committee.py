@@ -14,6 +14,7 @@ from group_purchase.purchase_deliver.parser_mng import get_excel_parser
 from group_purchase.utils.utils import *
 
 from antigen_bot.forward_config import ConfigFactory
+from antigen_bot.message_controller import MessageController
 
 
 class CommitteePlugin(WechatyPlugin):
@@ -59,6 +60,8 @@ class CommitteePlugin(WechatyPlugin):
         for config in self.config_factory.instance():
             for admin_id in config.admins.keys():
                 self.admin_ids.add(admin_id)
+
+    @MessageController.instance().may_disable_message
     async def on_message(self, msg: Message) -> None:
         """listen message event"""
         if msg.room():

@@ -19,6 +19,7 @@ from wechaty_puppet import get_logger
 
 from antigen_bot.forward_config import Conv2ConvsConfig, load_from_excel
 from antigen_bot.utils import remove_at_info
+from antigen_bot.message_controller import MessageController
 
 class ConfigFactory:
     """Config Factory"""
@@ -40,7 +41,6 @@ class ConfigFactory:
         if not self.configs or self._get_md5() != self.md5:
             self.configs = load_from_excel(self.file)
         return self.configs
-
 
 
 class DynamicAuthorizationPlugin(WechatyPlugin):
@@ -125,6 +125,7 @@ class DynamicAuthorizationPlugin(WechatyPlugin):
         config = self._load_config()
         return contact_id in config.get(date, [])
 
+    @MessageController.instance().may_disable_message
     async def on_message(self, msg: Message) -> None:
         """handle the authorize"""
         room = msg.room()

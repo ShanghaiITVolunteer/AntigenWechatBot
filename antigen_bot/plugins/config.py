@@ -1,9 +1,7 @@
 """Basic Configuraiton for Bot"""
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Union
 from dataclasses_json import dataclass_json
-from wechaty import Contact, Room
 
 
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'

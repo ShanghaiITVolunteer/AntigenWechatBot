@@ -22,6 +22,7 @@ from antigen_bot.plugins.dynamic_authorization import (
 )
 from antigen_bot.forward_config import Conversation
 from antigen_bot.utils import remove_at_info
+from antigen_bot.message_controller import MessageController
 
 
 def split_number_and_words(text: str, pretrained_numbers: Set[str]) -> Tuple[List[str], List[str]]:
@@ -200,6 +201,7 @@ class Conv2ConvsPlugin(WechatyPlugin):
                 return []
         return target_configs[0].get_target_conversation()
 
+    @MessageController.instance().may_disable_message
     async def on_message(self, msg: Message) -> None:
         talker = msg.talker()
         room: Optional[Room] = msg.room()

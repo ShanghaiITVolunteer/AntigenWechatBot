@@ -7,6 +7,7 @@ from typing import (
 )
 from datetime import datetime
 from wechaty import (
+    Wechaty,
     Contact,
     FileBox,
     MessageType,
@@ -17,6 +18,7 @@ from wechaty import (
 )
 from wechaty_puppet import get_logger
 from wechaty_plugin_contrib.finders.room_finder import RoomFinder
+from antigen_bot.message_controller import MessageController
 
 
 
@@ -90,6 +92,10 @@ class MessageForwarderPlugin(WechatyPlugin):
 
         self.forward_records: Optional[ForwardRecord] = None
 
+    async def init_plugin(self, wechaty: Wechaty) -> None:
+        MessageController.instance().init_plugins(wechaty)
+        return await super().init_plugin(wechaty)
+
     def _load_message_forwarder_configuration(self) -> Dict[str, Any]:
         """load the message forwarder configuration
 
@@ -138,6 +144,7 @@ class MessageForwarderPlugin(WechatyPlugin):
         config = self._load_message_forwarder_configuration()
         return config.get('admin_ids', [])
 
+    @MessageController.instance().may_disable_message
     async def on_message(self, msg: Message) -> None:
         talker = msg.talker()
         room = msg.room()

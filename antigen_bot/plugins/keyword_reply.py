@@ -2,8 +2,6 @@
 from __future__ import annotations
 import argparse
 import asyncio
-from cgitb import text
-from re import S
 import sys
 import os
 from typing import Dict, List, Literal, Optional, Sequence, Union
@@ -26,6 +24,7 @@ from tap import Tap
 
 from antigen_bot.plugins.config import Conversation
 from antigen_bot.utils import remove_at_info
+from antigen_bot.message_controller import MessageController
 
 
 TYPE_MAPS: Dict[str, MessageType] = {
