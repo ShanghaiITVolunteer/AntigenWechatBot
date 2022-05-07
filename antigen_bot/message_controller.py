@@ -42,12 +42,15 @@ class MessageController:
             return
         plugin_map: Dict[str, WechatyPlugin] = wechaty._plugin_manager._plugins
         self.plugin_names = list(plugin_map.keys())
-    
-    def disable_all_plugins(self, msg: Union[Message, str]) -> None:
+
+    @staticmethod
+    def disable_all_plugins(msg: Union[Message, str]) -> None:
         """disable all plugins"""
+        instance = MessageController.instance()
+        
         if isinstance(msg, Message):
             msg = msg.message_id
-        self.disabled_plugins[msg] = deepcopy(self.plugin_names)
+        instance.disabled_plugins[msg] = deepcopy(instance.plugin_names)
     
     def may_disable_message(self, func):
         """decorator for disable the message"""

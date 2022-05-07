@@ -188,6 +188,9 @@ class MessageForwarderPlugin(WechatyPlugin):
             await file_box.to_file(file_path, overwrite=True)
             file_box = FileBox.from_file(file_path)
 
+        # 启用了此插件，则屏蔽掉所有其它插件
+        MessageController.instance().disable_all_plugins(msg)
+        
         self.forward_records = ForwardRecord(msg, talker=talker, rooms=rooms, max_interval_second=5)
         for room in rooms:
             self.logger.info('forward to room: %s', room)

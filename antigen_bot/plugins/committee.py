@@ -76,6 +76,7 @@ class CommitteePlugin(WechatyPlugin):
            return
 
         if self.type_name:
+            MessageController.disable_all_plugins(msg)
             if msg.type() == MessageType.MESSAGE_TYPE_ATTACHMENT:
                 file_box = await msg.to_file_box()
                 if not file_box.name.endswith('.xlsx'):
@@ -109,6 +110,7 @@ class CommitteePlugin(WechatyPlugin):
                 await msg.say(f'请上传Excel文件，如需再次执行解析服务\n请重新输入命令：{self.command}')
 
         elif msg.text() in self.type_names:
+            MessageController.disable_all_plugins(msg)
             self.type_name = msg.text()
             await msg.say('请上传Excel文件')
             return
