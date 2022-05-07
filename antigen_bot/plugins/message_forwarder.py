@@ -195,8 +195,7 @@ class MessageForwarderPlugin(WechatyPlugin):
         for room in rooms:
             self.logger.info('forward to room: %s', room)
             if file_box is None:
-                await room.say(msg.text())
-                # await msg.forward(room)
+                await msg.forward(room)
                 await asyncio.sleep(self.file_box_interval_seconds)
             else:
                 await room.say(file_box)
