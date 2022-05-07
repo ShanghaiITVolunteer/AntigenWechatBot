@@ -10,49 +10,86 @@ AntigenWechatBot是一个用于为基层干部（居委会干部）赋能的微�
 
 幸运的是，信息技术可以帮助解决上述可重复的问题。居民们已有的生活习惯已经基于智能设备，只要使用微信机器人，用户可以在极低的学习成本下摆脱大量重复工作。
 
-## 需求
+## 快速上手
 
-自动化微信机器人的功能需求如下所示：
+### 前提：Python-Wechaty & Token
 
-    1. 分发疫情信息以及团购信息  
-    
-    2. 提醒居民做抗原测试及采集抗原测试结果  
-## 代码展示
+此项目基于[python-wechaty](https://github.com/wechaty/python-wechaty)开发，如若各位开发者想要部署在自己小区，需提前了解具体用法，请移步到[官网文档](https://wechaty.readthedocs.io/zh_CN/latest/)。
 
-`pre_wrods.json`是一个包含可配置型的消息回复模板文件：
+要运行机器人首先需要[Token](https://wechaty.js.org/docs/puppet-services/tokens/)，如果已有对应Token且已然熟悉python-wechaty的使用，则可直接运行，否则可使用志愿者提供的机器人服务，具体细节可扫本页底部群二维码进群沟通。
 
+### 安装 
+
+```shell
+git clone https://github.com/ShanghaiITVolunteer/AntigenWechatBot
+cd AntigenWechatBot
+pip install -r requirements.txt
 ```
+
+### 插件配置
+
+* 疫情消息分发
+
+> [antigen_bot/plugins/message_forwarder.py](./antigen_bot/plugins/message_forwarder.py)
+
+
+```json
 {
-    "no_support_type": "对不起，该功能暂不支持",
-    "hello_qun": "大家好",
-    "failed_add_qun": "加群失败",
-    "welcome": "欢迎入群",
-    "alias_reminder": "您还没改群名称哦",
-    "no_qun": "您还没有可发送的群", 
-    "no_change": "只有群主可以更改群聊名称哦", 
-    "introduce": "您好呀，从今天起我就是您的社区管理AI小助理啦",
-    "not_user":"不是用户不能拉群，提醒他联系管理员"
+    "admin_ids": ["admin-id-1", "admin-id-2", "..."],
+    "room_ids": ["room-id-1", "room-id-2", "..."],
+    "room_regex": ["^某某小区(\\d+)号楼组群$"]
 }
 ```
 
-`message_forworder.json`为居委会消息转发的配置文件，以下为示例配置：
-```
-{
-    "JuWeihui1 居委会管理员1": [
-        "List Of JuWeiHui1's Group",
-        "居委会管理员1管理的群聊"
-    ],
-    "JuWeihui2 居委会管理员2": [
-        "List Of JuWeiHui2's Group",
-        "居委会管理员2管理的群聊"
-    ],
-    "JuWeihui3 居委会管理员3": [
-        "List Of JuWeiHui3's Group",
-        "居委会管理员3管理的群聊"
-    ]
-}
+* 群接龙 & 快团团
+
+> [antigen_bot/plugins/committee.py](./antigen_bot/plugins/committee.py)
+
+此插件对接[居委会项目](https://github.com/ShanghaiITVolunteer/JuWeiHui)，主要完成小区自动化文件处理等RPA类型工作。如果没有自己小区的对应功能，非常欢迎发起PR到该项目中丰富其功能。
+
+* 关键字回复
+
+> [antigen_bot/plugins/keyword_reply.py](./antigen_bot/plugins/keyword_reply.py)
+
+```json
+[
+    {
+        "keyword": "hello",
+        "convs": [
+            {
+                "name": "contact-name",
+                "id": "contact-id",
+                "type": "Contact",
+                "no": "0"
+            },
+            {
+                "name": "room-topic",
+                "id": "room-id",
+                "type": "Room",
+                "no": "1"
+            }
+        ],
+        "msgs": [
+            "world"
+        ]
+    }
+]
 ```
 
+* 抗原信息检测
+
+***此功能正在开发中，敬请期待，拒绝催更。***
+
+* 更多的功能
+
+**欢迎大家提[Issue](https://github.com/ShanghaiITVolunteer/AntigenWechatBot/issues/new)来讨论更多实用的功能。**
+
+
+### 运行
+
+```shell
+python run.py
+```
 ## 开发计划
 
 ### 第一阶段
@@ -146,6 +183,16 @@ sequenceDiagram
 ## 还有一些想说话的话
 
 还有一些想说的话。这个bot的目的不是用冷冰冰的机器来取代基层工作者和人民之间的联系。与之相反，我们旨在将基层工作者从重复、繁杂、琐碎的工作中解放出来，让他们更有动力去深入了解人民的高层次需求，以建立更温暖更友善的联系，并更好的服务于人民，建立鱼水情。我相信，只有增强这种联系，我们上海才能共同努力，一起克服这如洪水猛兽般的疫情！
+
+## 社区对接二维码
+
+此群主要提供给有意愿将机器人应用在自己小区中的开发者，非诚勿扰，我们只想利用有限的时间做好有意义的事情。
+
+![](./asset/room-qrcode.jpg)
+
+## Wechaty Service Provider
+
+非常感谢Padlocal作者[好大](https://github.com/padlocal)提供TOKNE服务支持。
 
 ## 项目顾问
 

@@ -7,6 +7,9 @@ from quart import Quart, jsonify
 from wechaty import Message, Wechaty, WechatyPluginOptions
 from wechaty.plugin import WechatyPlugin
 
+from antigen_bot.message_controller import MessageController
+
+
 
 class DingDongPlugin(WechatyPlugin):
     """DingDong Plugin"""
@@ -25,6 +28,7 @@ class DingDongPlugin(WechatyPlugin):
             return
         self.event.set()
 
+    @MessageController.instance().may_disable_message
     async def on_message(self, msg: Message) -> None:
         """listen message event"""
         talker = msg.talker()
@@ -33,6 +37,7 @@ class DingDongPlugin(WechatyPlugin):
             return
 
         if text == 'ding':
+            MessageController.instance().disable_all_plugins(msg)
             await talker.say('dong')
 
     async def blueprint(self, app: Quart) -> None:

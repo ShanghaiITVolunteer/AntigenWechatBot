@@ -14,6 +14,7 @@ from wechaty import (
     Room,
     Contact
 )
+from antigen_bot.message_controller import MessageController
 
 class WatchRoomTopicPlugin(WechatyPlugin):
     """WatchRoomTopicPlugin 

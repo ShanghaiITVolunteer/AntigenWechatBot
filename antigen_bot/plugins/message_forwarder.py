@@ -5,7 +5,10 @@ import asyncio
 from typing import (
     Any, Dict, Optional, List
 )
+from datetime import datetime
 from wechaty import (
+    Wechaty,
+    Contact,
     FileBox,
     MessageType,
     WechatyPlugin,
@@ -15,7 +18,56 @@ from wechaty import (
 )
 from wechaty_puppet import get_logger
 from wechaty_plugin_contrib.finders.room_finder import RoomFinder
+from antigen_bot.message_controller import MessageController
 
+
+
+class ForwardRecord:
+    """record the forward info"""
+    def __init__(self, msg: Message, talker: Contact, rooms: List[Room], max_interval_second: int = 4) -> None:
+        self.room_status = {room.room_id: False for room in rooms}
+        self.max_interval_seconds = max_interval_second
+
+        self.last_update_time: datetime = None
+        self.source_message = msg
+        
+        loop = asyncio.get_event_loop()
+        loop.create_task(self.monitor())
+        self.contact = talker
+
+    async def monitor(self):
+        """monitor the sended message by the bot"""
+        last_update_time = datetime.now() if not self.last_update_time else self.last_update_time
+        expired = (datetime.now() - last_update_time).seconds > self.max_interval_seconds
+        if not self.last_update_time or not expired:
+            await asyncio.sleep(self.max_interval_seconds)
+            await self.monitor()
+            return
+        
+        sended_rooms: List[Room] = [room for room, status in self.room_status.items() if status]
+        sended_rooms.sort(key=lambda room: room.payload.topic)
+
+        not_sended_rooms: List[Room] = [room for room, status in self.room_status.items() if not status]
+        not_sended_rooms.sort(key=lambda room: room.payload.topic)
+        info = [
+            f'已发送的群<{len(sended_rooms)}>:',
+            '\n'.join([f'{room.payload.topic}' for room in sended_rooms]),
+            '==========='
+            f'未发送的群<{len(not_sended_rooms)}>:',
+            '\n'.join([f'{room.payload.topic}' for room in not_sended_rooms]),
+        ]
+        await self.contact.say('\n'.join(info))
+
+    
+    def update_message(self, msg: Message):
+        """update the message"""
+        room = msg.room()
+        if msg.type() != self.source_message.type() or not room or room.room_id not in self.room_status:
+            return
+
+        self.last_update_time = datetime.now()
+        self.room_status[room.room_id] = True
+    
 
 class MessageForwarderPlugin(WechatyPlugin):
     """
@@ -37,6 +89,12 @@ class MessageForwarderPlugin(WechatyPlugin):
         log_file = os.path.join('.wechaty', self.name + '.log')
         self.logger = get_logger(self.name, log_file)
         self.file_box_interval_seconds: int = file_box_interval_seconds
+
+        self.forward_records: Optional[ForwardRecord] = None
+
+    async def init_plugin(self, wechaty: Wechaty) -> None:
+        MessageController.instance().init_plugins(wechaty)
+        return await super().init_plugin(wechaty)
 
     def _load_message_forwarder_configuration(self) -> Dict[str, Any]:
         """load the message forwarder configuration
@@ -86,6 +144,7 @@ class MessageForwarderPlugin(WechatyPlugin):
         config = self._load_message_forwarder_configuration()
         return config.get('admin_ids', [])
 
+    @MessageController.instance().may_disable_message
     async def on_message(self, msg: Message) -> None:
         talker = msg.talker()
         room = msg.room()
@@ -95,10 +154,14 @@ class MessageForwarderPlugin(WechatyPlugin):
 
         # 2. 判断是否是自己发送的消息
         if talker.contact_id == self.bot.user_self().contact_id:
+            self.logger.error('receive self message ....')
+            # 更新记录
+            if self.forward_records:
+                self.forward_records.update_message(msg)
             return
         
         if msg.text() == 'ding':
-            await msg.say('dong')
+            await msg.say('dong - ' + self.name)
             return
 
         # 3. 检查RoomFinder是否存在
@@ -125,10 +188,15 @@ class MessageForwarderPlugin(WechatyPlugin):
             await file_box.to_file(file_path, overwrite=True)
             file_box = FileBox.from_file(file_path)
 
+        # 启用了此插件，则屏蔽掉所有其它插件
+        MessageController.instance().disable_all_plugins(msg)
+        
+        self.forward_records = ForwardRecord(msg, talker=talker, rooms=rooms, max_interval_second=5)
         for room in rooms:
             self.logger.info('forward to room: %s', room)
             if file_box is None:
-                await msg.forward(room)
+                await room.say(msg.text())
+                # await msg.forward(room)
                 await asyncio.sleep(self.file_box_interval_seconds)
             else:
                 await room.say(file_box)

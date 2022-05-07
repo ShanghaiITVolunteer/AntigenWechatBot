@@ -1,10 +1,9 @@
 """"""
 import os
+import re
 from typing import (
     Dict, Optional, List, Set, Tuple, Union
 )
-from dataclasses import dataclass, field
-import hashlib
 from wechaty import (
     Contact,
     FileBox,
@@ -15,130 +14,15 @@ from wechaty import (
     WechatyPluginOptions
 )
 from wechaty_puppet import get_logger
-from dataclasses_json import dataclass_json
-import pandas as pd
-from pandas import DataFrame
 
-from antigen_bot.plugins.dynamic_code import DynamicCodePlugin
-
-
-@dataclass_json
-@dataclass
-class Conversation:
-    """Room or Contact Configuraiton"""
-    name: str
-    id: str
-    type: str = 'Room'
-    no: str = ''
-
-    def info(self):
-        """get the simple info"""
-        return f'[{self.type}]\t名称：{self.name}\t\t编号：[{self.id}]'
-
-@dataclass_json
-@dataclass
-class Conv2ConvsConfig:
-    """Conversation to conversations configuration"""
-    name: str
-    admins: Dict[str, Conversation] = field(default_factory=dict)
-    target_conversations: Dict[str, Conversation] = field(default_factory=dict)
-
-    def is_admin(self, conversation_id: str) -> bool:
-        """check if the conversation is admin conversation
-
-        Args:
-            conversation_id (str): the id of Room or Contact
-
-        Returns:
-            bool: if the conversation is admin conversation
-        """
-        return str(conversation_id) in self.admins
-    
-    def get_target_conversation(self, name_or_no: Optional[str] = None) -> List[Conversation]:
-        """get the target conversation object
-
-        Args:
-            name_or_no (str): the name or number of the target conversation
-
-        Returns:
-            Optional[Conversation]: the target conversation object
-        """
-        conversations: List[Conversation] = list(self.target_conversations.values())
-
-        if name_or_no:
-            name_or_no = str(name_or_no)
-            conversations = [conversation for conversation in conversations if str(conversation.name) == name_or_no or str(conversation.no) == name_or_no]
-        return conversations
-
-    def get_names_or_nos(self) -> List[str]:
-        """get the names or numbers of the target conversations
-
-        Returns:
-            List[str]: the names or numbers of the target conversations
-        """
-        names_or_nos = set()
-        for conversation in self.target_conversations.values():
-            names_or_nos.add(conversation.name)
-
-        for conversation in self.target_conversations.values():
-            names_or_nos.add(conversation.no)
-
-        return [str(item) for item in names_or_nos]
-
-
-class ConfigFactory:
-    """Config Factory"""
-    def __init__(self, config_file: str) -> None:
-        self.file = config_file
-        self.md5 = self._get_md5()
-
-        self.configs: List[Conv2ConvsConfig] = []
-    
-    def _get_md5(self) -> str:
-        """get the md5 sum of the configuration file"""
-        with open(self.file, 'rb') as f:
-            data = f.read()
-            md5 = hashlib.md5(data).hexdigest()
-        return md5
-    
-    def instance(self) -> List[Conv2ConvsConfig]:
-        """get the instance the configuration"""
-        if not self.configs or self._get_md5() != self.md5:
-            self.configs = load_from_excel(self.file)
-        return self.configs
-
-
-def load_from_excel(file: str) -> List[Conv2ConvsConfig]:
-    """load the configuration from excel file"""
-    # 1. load configuration from excel file
-    group_df: DataFrame = pd.read_excel(file, sheet_name='group')
-    admin_df: DataFrame = pd.read_excel(file, sheet_name='admins')
-
-    # 2. build the configuration
-    configs: List[Conv2ConvsConfig] = []
-    group_names = list(set(group_df.group_name))
-
-    for group_name in group_names:
-        config: Conv2ConvsConfig = Conv2ConvsConfig(name=group_name)
-
-        group_df_group_name = group_df[group_df.group_name == group_name]
-        for _, row in group_df_group_name.iterrows():
-            config.target_conversations[str(row.id)] = Conversation(
-                name=row['name'],
-                id=row['id'],
-                type=row['type'],
-                no=row['no']
-            )
-        admin_df_group_name = admin_df[admin_df.group_name == group_name]
-        for _, row in admin_df_group_name.iterrows():
-            config.admins[str(row.id)] = Conversation(
-                name=row['name'],
-                id=row['id'],
-                type=row['type'],
-                no=row['no']
-            )
-        configs.append(config)
-    return configs
+from antigen_bot.plugins.dynamic_authorization import (
+    DynamicAuthorizationPlugin,
+    Conv2ConvsConfig,
+    ConfigFactory
+)
+from antigen_bot.forward_config import Conversation
+from antigen_bot.utils import remove_at_info
+from antigen_bot.message_controller import MessageController
 
 
 def split_number_and_words(text: str, pretrained_numbers: Set[str]) -> Tuple[List[str], List[str]]:
@@ -151,6 +35,16 @@ def split_number_and_words(text: str, pretrained_numbers: Set[str]) -> Tuple[Lis
     Returns:
         Tuple[List[str], List[str]]: the result of numbers and words
     """
+    # 1. match the: #3-8 pattern
+    pattern = '[ ]?[0-9]+[ ]?-[ ]?[0-9]+'
+    result = re.findall(pattern, text)
+    if result:
+        source_text: str = result[0]
+        number_range = [int(item) for item in source_text.split('-')]
+        numbers: List[str] = [str(item) for item in range(number_range[0], number_range[1] + 1)]
+        words = text.replace(source_text, '').strip()
+        return numbers, [words]
+ 
     numbers, words = [], []
     for token in text.split():
         if not token:
@@ -162,11 +56,15 @@ def split_number_and_words(text: str, pretrained_numbers: Set[str]) -> Tuple[Lis
     return numbers, words
 
 
+
 class Conv2ConvsPlugin(WechatyPlugin):
     """
     功能点：
         1. 当被邀请入群，则立马同意，同时保存其相关信息。
         2. 如果是私聊的消息，则直接转发给该用户邀请机器人进入的所有群聊当中
+
+    bigbrother updates：
+        更改触发校验的dynamic_code机制为dynamic_authority机制
     """
     def __init__(
         self,
@@ -177,13 +75,14 @@ class Conv2ConvsPlugin(WechatyPlugin):
         trigger_with_at: bool = True,
         forward_none_command_message: bool = False,
         say_forward_help_info_to_talker: bool = True,
-        dynamic_code_plugin: Optional[DynamicCodePlugin] = None,
-    ) -> None:
+        dynamic_plugin: Optional[DynamicAuthorizationPlugin] = None,) -> None:
         super().__init__(options)
-        # 1. init the configs file
+
+        self.cache_dir = '.wechaty/conv2convs'
+        os.makedirs(self.cache_dir, exist_ok=True)
 
         # 2. save the log info into <plugin_name>.log file
-        log_file = os.path.join('.wechaty', self.name + '.log')
+        log_file = os.path.join(self.cache_dir, self.name + '.log')
         self.logger = get_logger(self.name, log_file)
         self.expire_seconds = expire_seconds
         
@@ -196,13 +95,12 @@ class Conv2ConvsPlugin(WechatyPlugin):
         self.say_forward_help_info_to_talker = say_forward_help_info_to_talker
 
         self.trigger_with_at = trigger_with_at
-        self.at_prefix_info: Dict[str, str] = {}
-
+        
+        # 4. cache the Room/Contact data
         self._rooms: List[Room] = []
         self._contacts: List[Contact] = []
 
-        self.dynamic_code_plugin = dynamic_code_plugin
-
+        self.dynamic_plugin = dynamic_plugin
 
     async def get_room(self, id_or_name) -> Optional[Room]:
         """get the room by id or name"""
@@ -244,25 +142,6 @@ class Conv2ConvsPlugin(WechatyPlugin):
 
         return None
 
-    async def remove_at_info(self, text: str, room_id: str) -> str:
-        """get the clear message, remove the command prefix and at"""
-
-        if not self.trigger_with_at:
-            return text
-        
-        if room_id not in self.at_prefix_info:
-            split_chars = ['\u2005', '\u0020']
-            while text.startswith('@'):
-                text = text.strip()
-                for char in split_chars:
-                    tokens = text.split(char)
-                    if len(tokens) > 1:
-                        tokens = [token for token in text.split(char) if not token.startswith('@')]
-                        text = char.join(tokens)
-                    else:
-                        text = ''.join(tokens)
-
-        return text
 
     async def forward_message(self, msg: Message, conversation_id: str):
         """forward the message to the target conversations
@@ -300,7 +179,29 @@ class Conv2ConvsPlugin(WechatyPlugin):
 
             elif forwarder_target:
                 await msg.forward(forwarder_target)
+        
+    async def get_receivers(self, msg: Message) -> List[Conversation]:
+        """check if the message should be forwarded
+        
+        功能:
+            1. 如果是群聊的消息：如果群在授权范围内，且机器人被艾特
+            2. 如果私聊消息：如果此联系人在授权范围内
+        """
+        room = msg.room()
+        talker = msg.talker()
+        configs: List[Conv2ConvsConfig] = self.config_factory.instance()
+        conversation_id = room.room_id if room else talker.contact_id
 
+        target_configs = [config for config in configs if config.is_admin(conversation_id)]
+        if not target_configs:
+            return []
+        
+        if room:
+            if not await msg.mention_self():
+                return []
+        return target_configs[0].get_target_conversation()
+
+    @MessageController.instance().may_disable_message
     async def on_message(self, msg: Message) -> None:
         talker = msg.talker()
         room: Optional[Room] = msg.room()
@@ -308,7 +209,7 @@ class Conv2ConvsPlugin(WechatyPlugin):
         # 2. 判断是否是自己发送的消息
         if talker.contact_id == self.bot.user_self().contact_id:
             return
-        
+
         # 3. 如果不是群消息的话，就直接返回
         if not room:
             return
@@ -321,13 +222,13 @@ class Conv2ConvsPlugin(WechatyPlugin):
             mention_self = await msg.mention_self()
             if not mention_self:
                 return
-            text = await self.remove_at_info(text=text, room_id=room.room_id)
+            text = remove_at_info(text=text)
 
         configs: List[Conv2ConvsConfig] = self.config_factory.instance()
 
         # 1. 判断是否是群转发的相关配置
         target_configs: List[Conv2ConvsConfig] = [config for config in configs if config.is_admin(room.room_id)]
-        if not target_configs:
+        if not target_configs or not self.dynamic_plugin.is_valid(conversation_id):
             return
 
         if len(target_configs) > 1:
@@ -349,25 +250,19 @@ class Conv2ConvsPlugin(WechatyPlugin):
             self.admin_status.pop(conversation_id)
             return
 
-        target_conversations = []
-
         # filter the target conversations
         if text.startswith(self.command_prefix):
 
-            if len(text.split('#')) != 3:
-                await msg.say('检查到格式错误，请按照规范输入，格式为\n@AntigenBot #[动态密码] #[群号] [群号] [你想说的话]')
+            if len(text.split('#')) != 2:
+                await msg.say('检查到格式错误，请按照规范输入，格式为\n@AntigenBot #[群号] [群号] [你想说的话]')
                 return
+
             # parse token & command
             text = text[len(self.command_prefix):]
-            code = text[: text.index('#')].strip()
-
-            if not self.dynamic_code_plugin.is_valid_code(code):
-                await msg.say('动态密码错误，停止转发此消息，切勿骚扰机器人。')
-                return
-
             text = text[text.index('#') + 1:].strip()
 
             numbers, words = split_number_and_words(text, config.get_names_or_nos())
+            target_conversations = []
             for name_or_no in numbers:
                 target_conversations.extend(config.get_target_conversation(name_or_no))
 
@@ -378,12 +273,12 @@ class Conv2ConvsPlugin(WechatyPlugin):
                 msg.payload.text = ' '.join(words)
                 await self.forward_message(msg, conversation_id=conversation_id)
                 self.admin_status.pop(conversation_id)
-        
+
     async def say_forward_help_info(self, msg: Message):
         """say frowarder help info to the talker
 
         Args:
-            conversation (Union[Room, Contact]): the source of the 
+            conversation (Union[Room, Contact]): the source of the
         """
         talker = msg.talker()
         room: Optional[Room] = msg.room()

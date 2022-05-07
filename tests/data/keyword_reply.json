@@ -1,0 +1,22 @@
+[
+    {
+        "keyword": "hello",
+        "convs": [
+            {
+                "name": "contact-name",
+                "id": "contact-id",
+                "type": "Contact",
+                "no": "0"
+            },
+            {
+                "name": "room-topic",
+                "id": "room-id",
+                "type": "Room",
+                "no": "1"
+            }
+        ],
+        "msgs": [
+            "world"
+        ]
+    }
+]
