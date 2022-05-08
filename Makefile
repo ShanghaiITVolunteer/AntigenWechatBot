@@ -1,10 +1,10 @@
 run:
 	make install
-	python run.py
+	python3 run.py
 
 install:
-	pip install -r requirements.txt
+	pip3 install -r requirements.txt
 
 build:
-	docker build -t antigen-bot:0.1 .
 	docker build -t antigen-bot:latest . 
+	

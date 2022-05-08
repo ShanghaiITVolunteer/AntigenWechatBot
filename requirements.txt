@@ -10,4 +10,5 @@ dataclasses-json
 python-dotenv
 pdfkit
 asq
-git+https://github.com/ShanghaiITVolunteer/JuWeiHui.git
+typed-argument-parser
+# git+https://github.com/wj-Mcat/juweihui.git

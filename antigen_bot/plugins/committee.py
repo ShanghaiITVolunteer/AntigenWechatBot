@@ -1,6 +1,5 @@
 """Committee Plugin which provide more"""
 import os
-from uuid import uuid4
 from typing import Optional
 from logging import Logger
 
@@ -51,6 +50,7 @@ class CommitteePlugin(WechatyPlugin):
         self.type_name: Optional[str] = False
 
         self.type_names = ['快团团', '群接龙']
+        self.cancel_word = '取消'
     
     def init_admin_ids(self):
         """init the admin ids"""
@@ -75,6 +75,11 @@ class CommitteePlugin(WechatyPlugin):
         if talker.contact_id not in self.admin_ids:
            return
 
+        if msg.type() == MessageType.MESSAGE_TYPE_TEXT and msg.text() == self.cancel_word:
+            self.type_name = None
+            MessageController.disable_all_plugins(msg)
+            return
+
         if self.type_name:
             MessageController.disable_all_plugins(msg)
             if msg.type() == MessageType.MESSAGE_TYPE_ATTACHMENT:
@@ -83,7 +88,7 @@ class CommitteePlugin(WechatyPlugin):
                     await talker.say('请上传Excel相关文件')
                     return
 
-                file_path = os.path.join(self.cache_dir, f'{uuid4()}-{file_box.name}')
+                file_path = os.path.join(self.cache_dir, f'{file_box.name}')
                 await file_box.to_file(file_path, overwrite=True)
                 parser = get_excel_parser(self.type_name)(open(file_path, 'rb'))
 
@@ -104,11 +109,10 @@ class CommitteePlugin(WechatyPlugin):
                 await msg.say(file_box)
                 await msg.say(f'{self.type_name} 类型文件已处理完毕')
                 self.type_name = None
-            elif msg.type() in [MessageType.MESSAGE_TYPE_UNSPECIFIED, MessageType.MESSAGE_TYPE_TEXT]:
+            elif msg.type() in [MessageType.MESSAGE_TYPE_UNSPECIFIED]:
                 return
             else:
-                await msg.say(f'请上传Excel文件，如需再次执行解析服务\n请重新输入命令：{self.command}')
-
+                await msg.say(f'请上传Excel文件以执行命令<{self.type_name}>，如需撤销请输入: {self.cancel_word}\n，稍后您重新输入：{"/".join(self.type_names)}关键字可重新执行命令')
         elif msg.text() in self.type_names:
             MessageController.disable_all_plugins(msg)
             self.type_name = msg.text()
