@@ -2,7 +2,7 @@
 from __future__ import annotations
 from datetime import datetime
 import os
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Set
 import hashlib
 from dataclasses import dataclass, field
 
@@ -121,6 +121,7 @@ class ConfigFactory:
         self.mtime = self._get_mtime()
 
         self.configs: List[Conv2ConvsConfig] = []
+        self._admin_ids = set()
     
     def _get_mtime(self) -> datetime:
         """get the md5 sum of the configuration file"""
@@ -135,3 +136,16 @@ class ConfigFactory:
         if not self.configs or self.config_changed():
             self.configs = load_from_excel(self.file)
         return self.configs
+    
+    def get_admin_ids(self) -> Set[str]:
+        # 1. return the cached admin ids
+        if not self.config_changed() and len(self._admin_ids) > 0:
+            return self._admin_ids
+        
+        # 2. load admin ids
+        self._admin_ids.clear()
+        for config in self.instance():
+            for admin_id in config.admins.keys():
+                self._admin_ids.add(admin_id)
+            
+        return self._admin_ids
