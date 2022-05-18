@@ -18,8 +18,11 @@ from wechaty import (
     Contact,
     Message
 )
+from wechaty_puppet import get_logger
 import pandas as pd
 from quart import Quart, send_file
+
+page_dir = os.path.join(os.path.dirname(__file__), 'pages')
 
 
 class InfoDownloaderPlugin(WechatyPlugin):
@@ -28,8 +31,9 @@ class InfoDownloaderPlugin(WechatyPlugin):
     def __init__(self, options: Optional[WechatyPluginOptions] = None):
         super().__init__(options)
 
-        self.cache_dir = '.wechaty'
+        self.cache_dir = os.path.join('.wechaty', self.name)
         os.makedirs(self.cache_dir, exist_ok=True)
+        self.logger = get_logger(self.name, f'{self.cache_dir}/log.log')
 
     async def get_contacts_infos(self):
         """load all of contact info into csv file format"""
@@ -78,25 +82,14 @@ class InfoDownloaderPlugin(WechatyPlugin):
 
     async def blueprint(self, app: Quart) -> None:
 
-        @app.route('/info/download')
-        async def info_download():
-            # 1. gen the excel file
-            contact_infos = await self.get_contacts_infos()
-            room_infos = await self.get_room_infos()
-
-            info_file = os.path.join(self.cache_dir, f'wechaty_info-{str(uuid4())}.xlsx')
-            #create a Pandas Excel writer using XlsxWriter as the engine
-            writer = pd.ExcelWriter(info_file, engine='openpyxl')
-
-            pd.DataFrame(contact_infos).to_excel(writer, sheet_name='contacts')
-            pd.DataFrame(room_infos).to_excel(writer, sheet_name='rooms')
-
-            writer.save()
-            
-            # 2. return the file
-            response = await send_file(info_file)
-            return response
-
+        @app.route('/info/contacts')
+        async def show_info_contacts():
+            self.logger.info('===========================all contacts===========================')
+            contacts = await self.get_contacts_infos()
+            for contact in contacts:
+                self.logger.info(contact)
+            self.logger.info('===========================all contacts===========================')
+            return ''
         @app.route('/hello')
         async def hello():
             return 'hello'

@@ -104,7 +104,7 @@ class CommitteePlugin(WechatyPlugin):
                     await msg.say(f'单元格:{",".join(errors)} 数据错误，情检查后再上传')
                     return
 
-                result.print_to_pdf(pdf_file)
+                result.print_to_pdf(pdf_file, self.community.has_area)
                 self.logger.success(f"contact<{talker}> success for pdf file<{pdf_file}> ...")
 
                 file_box = FileBox.from_file(pdf_file)
@@ -115,7 +115,7 @@ class CommitteePlugin(WechatyPlugin):
                 # delete the temp file
                 os.remove(file_name_path)
                 os.remove(pdf_file)
-                
+
             elif msg.type() in [MessageType.MESSAGE_TYPE_UNSPECIFIED]:
                 return
             else:
