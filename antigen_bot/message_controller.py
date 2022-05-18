@@ -1,9 +1,12 @@
 from __future__ import annotations
+import os
 from typing import Dict, List, Optional, Union
 import functools
 from copy import deepcopy
 
 from wechaty import Message, Wechaty, WechatyPlugin
+from wechaty_puppet import get_logger
+
 
 
 class MessageController:
@@ -12,8 +15,9 @@ class MessageController:
     def __init__(self) -> None:
         self.ids = set()
         self.plugin_names: List[str] = []
-        
         self.disabled_plugins: Dict[str, List[str]] = {}
+
+        self.logger = get_logger("MessageController", file='.wechaty/message_controller.log')
     
     def exist(self, message_id: str) -> bool:
         """exist if the message has been emitted
@@ -50,6 +54,7 @@ class MessageController:
         
         if isinstance(msg, Message):
             msg = msg.message_id
+    
         instance.disabled_plugins[msg] = deepcopy(instance.plugin_names)
     
     def may_disable_message(self, func):
@@ -57,6 +62,8 @@ class MessageController:
         @functools.wraps(func)
         async def wrapper(plugin: WechatyPlugin, msg: Message):
             if msg.message_id in self.disabled_plugins and plugin.name in self.disabled_plugins[msg.message_id]:
+                self.logger.info(f'disable plugin: {plugin}')
+                self.logger.info(f'disable under message<{msg.message_id}>: {msg}\n')
                 return
             await func(plugin, msg)
         return wrapper

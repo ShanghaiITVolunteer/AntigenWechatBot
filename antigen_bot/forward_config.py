@@ -2,12 +2,13 @@
 from __future__ import annotations
 from datetime import datetime
 import os
-from typing import Dict, Optional, List, Set
+from typing import Dict, Optional, List, Set, Tuple, Union
 import hashlib
 from dataclasses import dataclass, field
 
 from pandas import DataFrame, read_excel
 from dataclasses_json import dataclass_json
+from wechaty import Contact, Room
 
 @dataclass_json
 @dataclass
@@ -41,21 +42,16 @@ class Conv2ConvsConfig:
         """
         return str(conversation_id) in self.admins
 
-    def get_target_conversation(self, name_or_no: Optional[str] = None) -> List[Conversation]:
+    def get_target_conversation(self, conv_id: str) -> List[Conversation]:
         """get the target conversation object
 
         Args:
-            name_or_no (str): the name or number of the target conversation
+            conv_id (str): the id of admin conversation 
 
         Returns:
-            Optional[Conversation]: the target conversation object
+            List[Conversation]: the target conversation object
         """
-        conversations: List[Conversation] = list(self.target_conversations.values())
-
-        if name_or_no:
-            name_or_no = str(name_or_no)
-            conversations = [conversation for conversation in conversations if str(conversation.name) == name_or_no or str(conversation.no) == name_or_no]
-        return conversations
+        return self.target_conversations.get(conv_id, [])
 
     def get_names_or_nos(self) -> List[str]:
         """get the names or numbers of the target conversations
@@ -120,7 +116,7 @@ class ConfigFactory:
         self.file = config_file
         self.mtime = self._get_mtime()
 
-        self.configs: List[Conv2ConvsConfig] = []
+        self._configs: List[Conv2ConvsConfig] = []
         self._admin_ids = set()
     
     def _get_mtime(self) -> datetime:
@@ -131,11 +127,11 @@ class ConfigFactory:
         """check that if the config file changes"""
         return self._get_mtime() != self.mtime
 
-    def instance(self) -> List[Conv2ConvsConfig]:
+    def get_configs(self) -> List[Conv2ConvsConfig]:
         """get the instance the configuration"""
-        if not self.configs or self.config_changed():
-            self.configs = load_from_excel(self.file)
-        return self.configs
+        if not self._configs or self.config_changed():
+            self._configs = load_from_excel(self.file)
+        return self._configs
     
     def get_admin_ids(self) -> Set[str]:
         # 1. return the cached admin ids
@@ -144,8 +140,52 @@ class ConfigFactory:
         
         # 2. load admin ids
         self._admin_ids.clear()
-        for config in self.instance():
+        for config in self.get_configs():
             for admin_id in config.admins.keys():
                 self._admin_ids.add(admin_id)
             
         return self._admin_ids
+    
+    async def is_admin(self, conv: Union[Contact, Room]) -> bool:
+        admin_ids = self.get_admin_ids()
+        if isinstance(conv, Contact):
+            return conv.contact_id in admin_ids
+        if isinstance(conv, Room):
+            return conv.room_id in admin_ids
+        raise TypeError(f'conv type is expected with <Contact, Room>, but receive <{type(conv)}>')
+    
+    async def get_receivers(self, conv: Union[Contact, Room, str]) -> Tuple[List[str], List[str]]:
+        """get receivers by conv id
+
+        Args:
+            conv (Union[Contact, Room, str]): 
+                if is str, it present the id of Contact/Room
+                if is Contact, it present the instance of Contact
+                if is Room, it present the instance of Room
+
+        Returns:
+            Tuple[List[str], List[str]]: List[Room], List[Contact]
+        """
+        # 1. init the conv data
+        if isinstance(Contact):
+            conv = conv.contact_id
+        elif isinstance(Room):
+            conv = conv.room_id
+        
+        configs = self.get_configs()
+
+        # 2. get room ids & contact ids
+        room_ids, contact_ids = [], []
+        for config in configs:
+            if config.is_admin(conv):
+                for conversation in config.get_target_conversation(conv):
+                    if conversation.type == 'Contact':
+                        contact_ids.append(conversation.id)
+                    elif conversation.type == 'Room':
+                        room_ids.append(conversation.id)
+    
+        return room_ids, contact_ids
+        
+
+        
+                    
