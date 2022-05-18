@@ -15,4 +15,4 @@ def test_excel_parser():
     result, error = parser.parse_for_community(community)
     assert error is None
     assert result is not None
-    result.print_to_pdf(pdf_file)
+    result.print_to_pdf(pdf_file, False)

@@ -15,8 +15,6 @@ RUN python3 --version
 
 WORKDIR /antigenbot
 
-# cache the building stage of docker
-# RUN cd /home && git clone https://github.com/wj-Mcat/JuWeiHui.git
 
 COPY requirements.txt requirements.txt
 COPY Makefile Makefile

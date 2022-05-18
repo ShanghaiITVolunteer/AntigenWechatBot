@@ -1,6 +1,6 @@
 """Committee Plugin which provide more"""
 import os
-from typing import Optional, Set
+from typing import Dict, Optional, Set
 from logging import Logger
 
 from wechaty import FileBox, Message, MessageType, WechatyPluginOptions
@@ -29,11 +29,11 @@ class CommitteePlugin(WechatyPlugin):
         community: Optional[CommunityBase] = None,
         config_file: Optional[str] = None,
         options: Optional[WechatyPluginOptions] = None,
-        command: str = '#团购订单',
+        command_prefix: str = '#团购订单',
     ):
         super().__init__(options)
 
-        self.command = command
+        self.command_prefix = command_prefix
         self.community = community or JiaYiShuiAn()
 
         self.cache_dir = os.path.join('.wechaty', self.name)
@@ -54,10 +54,15 @@ class CommitteePlugin(WechatyPlugin):
         self.config_factory = ConfigFactory(self.config_file)
         self._admin_ids = set()
 
-        self.type_name: Optional[str] = False
+        self.status: Dict[str, str] = {}
 
-        self.type_names = ['快团团', '群接龙']
+        self.command_names = ['快团团', '群接龙']
         self.cancel_word = '取消'
+
+    
+    def remove_status(self, contact_id: str):
+        if contact_id in self.status:
+            self.status.pop(contact_id)
 
     @MessageController.instance().may_disable_message
     async def on_message(self, msg: Message) -> None:
@@ -69,16 +74,18 @@ class CommitteePlugin(WechatyPlugin):
         if msg.is_self():
             return
 
-        if talker.contact_id not in self.config_factory.get_admin_ids():
+        contact_id = talker.contact_id
+        if contact_id not in self.config_factory.get_admin_ids():
            return
 
         # 1. cancel the committee task
         if msg.type() == MessageType.MESSAGE_TYPE_TEXT and msg.text() == self.cancel_word:
-            self.type_name = None
             MessageController.disable_all_plugins(msg)
+            
+            self.remove_status(contact_id)
             return
 
-        if self.type_name:
+        if contact_id in self.status:
             MessageController.disable_all_plugins(msg)
             if msg.type() == MessageType.MESSAGE_TYPE_ATTACHMENT:
                 file_box = await msg.to_file_box()
@@ -90,27 +97,31 @@ class CommitteePlugin(WechatyPlugin):
 
                 file_path = os.path.join(self.file_cache_dir, f'{file_box.name}')
                 await file_box.to_file(file_path, overwrite=True)
-                parser = get_excel_parser(self.type_name)(open(file_path, 'rb'))
+                parser = get_excel_parser(self.status[contact_id])(open(file_path, 'rb'))
 
                 file_name_path, _ = os.path.splitext(file_path)
                 pdf_file = f'{file_name_path}.pdf'
+                self.logger.info('start to parse excel file ...')
                 try:
                     result, errors = parser.parse_for_community(self.community)
                 except:
                     await msg.say('Excel文件格式解析错误，情先确保文件的格式，请联系管理员')
                     return
-            
+                self.logger.info(f'contact<{talker}> parsed error <{errors}>')
+
                 if errors:
                     await msg.say(f'单元格:{",".join(errors)} 数据错误，情检查后再上传')
                     return
-
-                result.print_to_pdf(pdf_file, self.community.has_area)
-                self.logger.success(f"contact<{talker}> success for pdf file<{pdf_file}> ...")
+                try:
+                    result.print_to_pdf(pdf_file, self.community.has_area)
+                except Exception as e:
+                    self.logger.error(f'error: {e}')
 
                 file_box = FileBox.from_file(pdf_file)
                 await msg.say(file_box)
-                await msg.say(f'{self.type_name} 类型文件已处理完毕')
-                self.type_name = None
+                await msg.say(f'{self.status[contact_id]} 类型文件已处理完毕')
+                
+                self.remove_status(contact_id)
                 
                 # delete the temp file
                 os.remove(file_name_path)
@@ -119,12 +130,12 @@ class CommitteePlugin(WechatyPlugin):
             elif msg.type() in [MessageType.MESSAGE_TYPE_UNSPECIFIED]:
                 return
             else:
-                await msg.say(f'请上传Excel文件以执行命令<{self.type_name}>，如需撤销请输入: {self.cancel_word}\n，稍后您重新输入：{"/".join(self.type_names)}关键字可重新执行命令')
-        elif msg.text() in self.type_names:
+                await msg.say(f'请上传Excel文件以执行命令<{self.status}>，如需撤销请输入: {self.cancel_word}\n，稍后您重新输入：{"/".join(self.command_names)}关键字可重新执行命令')
+        elif msg.text() in self.command_names:
             self.logger.info(f'contact<{talker}> -> command: [{msg.text()}]')
             MessageController.disable_all_plugins(msg)
-            self.type_name = msg.text()
+            self.status[contact_id] = msg.text()
             await msg.say('请上传Excel文件')
             return
 
-        self.type_name = False
+        self.remove_status(contact_id)
