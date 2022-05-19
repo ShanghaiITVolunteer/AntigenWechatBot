@@ -24,7 +24,7 @@ from tap import Tap
 
 from antigen_bot.plugins.config import Conversation
 from antigen_bot.utils import remove_at_info
-from antigen_bot.message_controller import MessageController
+from antigen_bot.message_controller import message_controller
 
 
 TYPE_MAPS: Dict[str, MessageType] = {
