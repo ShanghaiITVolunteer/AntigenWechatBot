@@ -6,6 +6,7 @@ from quart import Quart, jsonify
 
 from wechaty import Message, Wechaty, WechatyPluginOptions
 from wechaty.plugin import WechatyPlugin
+from wechaty_puppet import get_logger
 
 from antigen_bot.message_controller import MessageController
 
@@ -18,6 +19,7 @@ class DingDongPlugin(WechatyPlugin):
         
         self.event = Event()
         self.is_init = False
+        self.logger = get_logger('messages', file='.wechaty/messages.log')
 
     async def init_plugin(self, wechaty: Wechaty) -> None:
         wechaty.on('dong', self.on_dong)
@@ -34,7 +36,15 @@ class DingDongPlugin(WechatyPlugin):
         talker = msg.talker()
         text = msg.text()
         if msg.room():
+            topic = await msg.room().topic()
+            if topic.startswith('嘉怡') and topic.endswith('号楼组群'):
+                return
+            if topic == '嘉怡志愿者群':
+                return
+
+            self.logger.info(msg)
             return
+        self.logger.info(msg)
 
         if text == 'ding':
             MessageController.instance().disable_all_plugins(msg)

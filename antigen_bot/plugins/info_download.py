@@ -79,17 +79,20 @@ class InfoDownloaderPlugin(WechatyPlugin):
             infos.append(info)
         
         return infos
-
-    async def blueprint(self, app: Quart) -> None:
-
-        @app.route('/info/contacts')
-        async def show_info_contacts():
+    
+    async def on_message(self, msg: Message) -> None:
+        if msg.room():
+            return
+        
+        if msg.text() == '#log-all-contacts':
             self.logger.info('===========================all contacts===========================')
             contacts = await self.get_contacts_infos()
             for contact in contacts:
                 self.logger.info(contact)
             self.logger.info('===========================all contacts===========================')
-            return ''
-        @app.route('/hello')
-        async def hello():
-            return 'hello'
+        elif msg.text() == '#log-all-rooms':
+            self.logger.info('===========================all rooms===========================')
+            rooms = await self.get_room_infos()
+            for room in rooms:
+                self.logger.info(room)
+            self.logger.info('===========================all rooms===========================')
