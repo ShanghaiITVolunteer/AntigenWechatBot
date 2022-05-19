@@ -1,7 +1,3 @@
-import asyncio
-import json
-import os
-from uuid import uuid4
 from typing import (
     Dict, Optional, List
 )
@@ -35,13 +31,16 @@ class InfoDownloaderPlugin(WechatyPlugin):
         os.makedirs(self.cache_dir, exist_ok=True)
         self.logger = get_logger(self.name, f'{self.cache_dir}/log.log')
 
-    async def get_contacts_infos(self):
+    async def get_contacts_infos(self, is_friend: Optional[bool] == None):
         """load all of contact info into csv file format"""
         contacts: List[Contact] = await self.bot.Contact.find_all()
         
         infos = []
         for contact in contacts:
             await contact.ready()
+            if is_friend:
+                if not is_friend == contact.payload.friend:
+                    continue
             fields = ['id', 'type', 'name', 'alias', 'friend', 'weixin', 'corporation', 'title', 'description', 'phone']
             info = {}
             for field in fields:
@@ -86,7 +85,7 @@ class InfoDownloaderPlugin(WechatyPlugin):
         
         if msg.text() == '#log-all-contacts':
             self.logger.info('===========================all contacts===========================')
-            contacts = await self.get_contacts_infos()
+            contacts = await self.get_contacts_infos(is_friend=True)
             for contact in contacts:
                 self.logger.info(contact)
             self.logger.info('===========================all contacts===========================')
@@ -96,3 +95,4 @@ class InfoDownloaderPlugin(WechatyPlugin):
             for room in rooms:
                 self.logger.info(room)
             self.logger.info('===========================all rooms===========================')
+
