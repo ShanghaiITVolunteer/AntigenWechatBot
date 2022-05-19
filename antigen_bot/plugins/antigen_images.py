@@ -9,7 +9,7 @@ import requests
 
 from dataclasses import dataclass, field
 
-from antigen_bot.message_controller import MessageController
+from antigen_bot.message_controller import message_controller
 
 
 @dataclass
@@ -30,7 +30,7 @@ class AntigenImagesPlugin(WechatyPlugin):
         self.admin_status = {}
         self.endpoint = endpoint or os.environ.get('antigen_image_endpoint', None)
 
-    @MessageController.instance().may_disable_message
+    @message_controller.may_disable_message
     async def on_message(self, msg: Message) -> None:
         """listen message event"""
         talker = msg.talker()
@@ -41,7 +41,7 @@ class AntigenImagesPlugin(WechatyPlugin):
             return
 
         if self.command in text:
-            MessageController.disable_all_plugins(msg)
+            message_controller.disable_all_plugins(msg)
             self.admin_status[talker.contact_id] = True
             
             if room:
@@ -50,7 +50,7 @@ class AntigenImagesPlugin(WechatyPlugin):
                 await talker.say('waiting for your antigen image ...')
             
         if msg.type() in [MessageType.MESSAGE_TYPE_IMAGE, MessageType.MESSAGE_TYPE_ATTACHMENT] and talker.contact_id in self.admin_status:
-            MessageController.disable_all_plugins(msg)
+            message_controller.disable_all_plugins(msg)
 
             file_box = await msg.to_file_box()
             target_file = os.path.join(self.cache_dir, file_box.name)

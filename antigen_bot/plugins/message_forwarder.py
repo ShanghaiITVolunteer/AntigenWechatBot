@@ -18,7 +18,7 @@ from wechaty import (
 )
 from wechaty_puppet import get_logger
 from wechaty_plugin_contrib.finders.room_finder import RoomFinder
-from antigen_bot.message_controller import MessageController
+from antigen_bot.message_controller import message_controller
 
 
 
@@ -91,7 +91,7 @@ class MessageForwarderPlugin(WechatyPlugin):
         self.file_box_interval_seconds: int = file_box_interval_seconds
 
     async def init_plugin(self, wechaty: Wechaty) -> None:
-        MessageController.instance().init_plugins(wechaty)
+        message_controller.init_plugins(wechaty)
         return await super().init_plugin(wechaty)
 
     def _load_message_forwarder_configuration(self) -> Dict[str, Any]:
@@ -142,7 +142,7 @@ class MessageForwarderPlugin(WechatyPlugin):
         config = self._load_message_forwarder_configuration()
         return config.get('admin_ids', [])
 
-    @MessageController.instance().may_disable_message
+    @message_controller.may_disable_message
     async def on_message(self, msg: Message) -> None:
         talker = msg.talker()
         room = msg.room()
@@ -191,7 +191,7 @@ class MessageForwarderPlugin(WechatyPlugin):
             file_box = FileBox.from_file(file_path)
 
         # 启用了此插件，则屏蔽掉所有其它插件
-        MessageController.instance().disable_all_plugins(msg)
+        message_controller.disable_all_plugins(msg)
         
         for room in rooms:
             self.logger.info('forward to room: %s', room)

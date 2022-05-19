@@ -12,6 +12,7 @@ from wechaty_puppet import get_logger
 class MessageController:
     """Store the Message Id Container"""
     _instance: Optional[MessageController] = None
+
     def __init__(self) -> None:
         self.ids = set()
         self.plugin_names: List[str] = []
@@ -50,7 +51,7 @@ class MessageController:
     @staticmethod
     def disable_all_plugins(msg: Union[Message, str]) -> None:
         """disable all plugins"""
-        instance = MessageController.instance()
+        instance = message_controller
         
         if isinstance(msg, Message):
             msg = msg.message_id
@@ -67,3 +68,5 @@ class MessageController:
                 return
             await func(plugin, msg)
         return wrapper
+
+message_controller = MessageController.instance()

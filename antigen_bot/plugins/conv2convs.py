@@ -17,7 +17,7 @@ from wechaty_puppet import get_logger
 
 from antigen_bot.forward_config import Conversation, ConfigFactory
 from antigen_bot.utils import remove_at_info
-from antigen_bot.message_controller import MessageController
+from antigen_bot.message_controller import message_controller
 
 
 def split_number_and_words(text: str, pretrained_numbers: Set[str]) -> Tuple[List[str], List[str]]:
@@ -135,7 +135,7 @@ class Conv2ConvsPlugin(WechatyPlugin):
             elif forwarder_target:
                 await msg.forward(forwarder_target)
 
-    @MessageController.instance().may_disable_message
+    @message_controller.may_disable_message
     async def on_message(self, msg: Message) -> None:
         talker = msg.talker()
         room: Optional[Room] = msg.room()

@@ -13,7 +13,7 @@ from group_purchase.purchase_deliver.parser_mng import get_excel_parser
 from group_purchase.utils.utils import *
 
 from antigen_bot.forward_config import ConfigFactory
-from antigen_bot.message_controller import MessageController
+from antigen_bot.message_controller import message_controller
 
 
 class CommitteePlugin(WechatyPlugin):
@@ -64,7 +64,7 @@ class CommitteePlugin(WechatyPlugin):
         if contact_id in self.status:
             self.status.pop(contact_id)
 
-    @MessageController.instance().may_disable_message
+    @message_controller.may_disable_message
     async def on_message(self, msg: Message) -> None:
         """listen message event"""
         if msg.room():
@@ -80,13 +80,13 @@ class CommitteePlugin(WechatyPlugin):
 
         # 1. cancel the committee task
         if msg.type() == MessageType.MESSAGE_TYPE_TEXT and msg.text() == self.cancel_word:
-            MessageController.disable_all_plugins(msg)
+            message_controller.disable_all_plugins(msg)
             
             self.remove_status(contact_id)
             return
 
         if contact_id in self.status:
-            MessageController.disable_all_plugins(msg)
+            message_controller.disable_all_plugins(msg)
             if msg.type() == MessageType.MESSAGE_TYPE_ATTACHMENT:
                 file_box = await msg.to_file_box()
 
@@ -133,7 +133,7 @@ class CommitteePlugin(WechatyPlugin):
                 await msg.say(f'请上传Excel文件以执行命令<{self.status}>，如需撤销请输入: {self.cancel_word}\n，稍后您重新输入：{"/".join(self.command_names)}关键字可重新执行命令')
         elif msg.text() in self.command_names:
             self.logger.info(f'contact<{talker}> -> command: [{msg.text()}]')
-            MessageController.disable_all_plugins(msg)
+            message_controller.disable_all_plugins(msg)
             self.status[contact_id] = msg.text()
             await msg.say('请上传Excel文件')
             return
