@@ -18,6 +18,7 @@ from wechaty import (
 from wechaty_puppet import get_logger
 import pandas as pd
 from quart import Quart, send_file
+from antigen_bot.message_controller import message_controller
 
 page_dir = os.path.join(os.path.dirname(__file__), 'pages')
 
@@ -79,7 +80,8 @@ class InfoDownloaderPlugin(WechatyPlugin):
             infos.append(info)
         
         return infos
-    
+
+    @message_controller.may_disable_message    
     async def on_message(self, msg: Message) -> None:
         if msg.room():
             return
@@ -90,10 +92,12 @@ class InfoDownloaderPlugin(WechatyPlugin):
             for contact in contacts:
                 self.logger.info(contact)
             self.logger.info('===========================all contacts===========================')
+            message_controller.disable_all_plugins()
         elif msg.text() == '#log-all-rooms':
             self.logger.info('===========================all rooms===========================')
             rooms = await self.get_room_infos()
             for room in rooms:
                 self.logger.info(room)
             self.logger.info('===========================all rooms===========================')
+            message_controller.disable_all_plugins()
 
