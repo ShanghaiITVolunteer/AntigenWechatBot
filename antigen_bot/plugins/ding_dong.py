@@ -43,12 +43,14 @@ class DingDongPlugin(WechatyPlugin):
                 return
 
             self.logger.info(msg)
-            return
         self.logger.info(msg)
 
         if text == 'ding':
             message_controller.disable_all_plugins(msg)
-            await talker.say('dong')
+            if msg.room():
+                await msg.room().say('dong', mention_ids=[talker.contact_id])
+            else:
+                await talker.say('dong')
 
     async def blueprint(self, app: Quart) -> None:
         @app.route('/ding')
