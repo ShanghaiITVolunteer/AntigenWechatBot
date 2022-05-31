@@ -1,3 +1,4 @@
+from codecs import ignore_errors
 import json
 import os
 import re
@@ -84,11 +85,13 @@ class MessageForwarderPlugin(WechatyPlugin):
         super().__init__(options)
         # 1. init the configs file
         self.config_file = config_file
-
         # 2. save the log info into <plugin_name>.log file
         log_file = os.path.join('.wechaty', self.name + '.log')
         self.logger = get_logger(self.name, log_file)
         self.file_box_interval_seconds: int = file_box_interval_seconds
+
+        self.cache_dir = f'.wechaty/forward_file_cached'
+        os.makedirs(self.cache_dir, exist_ok=True)
 
     async def init_plugin(self, wechaty: Wechaty) -> None:
         message_controller.init_plugins(wechaty)
@@ -184,9 +187,11 @@ class MessageForwarderPlugin(WechatyPlugin):
         else:
             self.logger.info('can not find any rooms ...')
         file_box = None
-        if msg.type() == MessageType.MESSAGE_TYPE_IMAGE:
+        if msg.type() in [MessageType.MESSAGE_TYPE_IMAGE, MessageType.MESSAGE_TYPE_ATTACHMENT, MessageType.MESSAGE_TYPE_VIDEO]:
             file_box = await msg.to_file_box()
-            file_path = '.wechaty/' + file_box.name
+            
+            file_path = os.path.join(self.cache_dir, file_box.name)
+
             await file_box.to_file(file_path, overwrite=True)
             file_box = FileBox.from_file(file_path)
 
